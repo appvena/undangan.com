@@ -12,6 +12,8 @@
   html, body { margin: 0; padding: 0; }
   body { font-family: 'Poppins', system-ui, sans-serif; background: #111225; color: #f0eeff; min-height: 100vh; }
   @keyframes fall { to { transform: translateY(720px) rotate(360deg); } }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-thumb { background: #33354f; border-radius: 99px; }
   input:focus, textarea:focus { border-color: #2f6f6a !important; }
@@ -54,10 +56,11 @@
   .toggle .sw i { position:absolute; top:2px; left:2px; width:19px; height:19px; border-radius:99px; background:#fff; transition:left .2s; }
   .toggle.on .sw i { left:19px; }
 
-  .galbox { margin-top:10px; padding:12px; border-radius:12px; background:#20223a; border:1px solid #2b2d45; }
-  .galbox .row { display:flex; gap:8px; }
-  .galbox input { flex:1; padding:10px 12px; border-radius:10px; font-size:14px; border:1px solid #33354f; background:#191b2e; color:#f0eeff; outline:none; }
-  .galbox .add { padding:0 14px; border-radius:10px; border:none; background:#2f6f6a; color:#fff; cursor:pointer; }
+  .subbox { margin-top:10px; padding:12px; border-radius:12px; background:#20223a; border:1px solid #2b2d45; }
+  .subbox .row { display:flex; gap:8px; }
+  .subbox input { flex:1; padding:10px 12px; border-radius:10px; font-size:14px; border:1px solid #33354f; background:#191b2e; color:#f0eeff; outline:none; }
+  .subbox .add { padding:0 14px; border-radius:10px; border:none; background:#2f6f6a; color:#fff; cursor:pointer; }
+  .subbox small { display:block; font-size:11px; color:#8b88a8; margin-top:8px; line-height:1.5; }
   .galtags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
   .galtags span { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:#c9c4dd; background:#2b2d45; padding:4px 8px; border-radius:8px; }
   .galtags span i { cursor:pointer; display:inline-flex; }
@@ -68,7 +71,6 @@
   .phone .screen { width:100%; height:100%; border-radius:30px; overflow:hidden; position:relative; }
   .phone .scroll { height:100%; overflow-y:auto; }
 
-  /* Invitation (uses CSS vars set inline) */
   .inv { font-family:var(--body); color:var(--text); background:linear-gradient(160deg,var(--bg),var(--bg2)); min-height:100%; position:relative; padding:0 0 40px; }
   .inv .s { padding:22px 24px; text-align:center; position:relative; z-index:1; }
   .inv .lab { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
@@ -96,6 +98,18 @@
   .inv .thanks { text-align:center; padding:18px 12px; background:var(--card); border-radius:var(--radius); border:1px solid color-mix(in srgb, var(--accent) 25%, transparent); max-width:320px; margin:0 auto; }
   .confetti { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
   .confetti span { position:absolute; top:-20px; border-radius:2px; opacity:.85; }
+
+  .cover { position:absolute; inset:0; z-index:30; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:34px 28px; background:linear-gradient(160deg,var(--bg),var(--bg2)); color:var(--text); font-family:var(--body); transition:transform .85s ease, opacity .6s ease; }
+  .cover.open { transform:translateY(-100%); opacity:0; pointer-events:none; }
+  .cover .clab { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--accent2); }
+  .cover h2 { font-family:var(--display); font-size:38px; line-height:1.1; margin:14px 0 6px; color:var(--text); }
+  .cover .cdate { font-family:var(--display); font-size:16px; color:var(--accent); margin-bottom:26px; }
+  .cover .cto { font-size:12px; color:var(--muted); margin-bottom:4px; letter-spacing:1px; }
+  .cover .cname { font-family:var(--display); font-size:20px; color:var(--text); margin-bottom:26px; }
+  .cover .open-btn { display:inline-flex; align-items:center; gap:8px; padding:12px 26px; border-radius:var(--radius); border:none; cursor:pointer; background:var(--accent); color:var(--card); font-weight:600; font-size:14px; box-shadow:0 8px 22px -6px color-mix(in srgb, var(--accent) 70%, transparent); animation:pulse 2.4s ease-in-out infinite; }
+
+  .music-btn { position:absolute; right:14px; bottom:14px; z-index:22; width:44px; height:44px; border-radius:99px; border:none; cursor:pointer; display:grid; place-items:center; box-shadow:0 6px 16px rgba(0,0,0,.28); color:#fff; }
+  .music-btn.spin svg { animation:spin 4s linear infinite; }
 
   @media (min-width:900px) {
     #app { display:flex; height:calc(100vh - 61px); }
@@ -130,12 +144,28 @@
   <div class="stage">
     <div class="phone">
       <div class="notch"></div>
-      <div class="screen"><div class="scroll" id="preview"></div></div>
+      <div class="screen">
+        <div class="scroll" id="preview"></div>
+        <button class="music-btn" id="music-btn" style="display:none"></button>
+        <div class="cover" id="cover"></div>
+      </div>
     </div>
   </div>
 </div>
+<audio id="bgm" loop></audio>
 
 <script>
+/* =====================================================================
+   PENGATURAN RSVP
+   Untuk mengumpulkan semua jawaban RSVP ke satu tempat:
+   1. Buat akun gratis di https://formspree.io
+   2. Buat "form" baru, lalu salin alamat endpoint-nya
+      (bentuknya: https://formspree.io/f/xxxxxx)
+   3. Tempel di antara tanda kutip di bawah ini.
+   Jika dibiarkan kosong, RSVP disimpan lokal di perangkat tamu saja.
+   ===================================================================== */
+var RSVP_ENDPOINT = "";
+
 /* ---------- Icons ---------- */
 var ICONS = {
   mapPin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
@@ -152,7 +182,11 @@ var ICONS = {
   trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
   gem:'<path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/>',
   leaf:'<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/>',
-  party:'<path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-3.9 3.9"/><path d="M15 6.5a4.5 4.5 0 0 0-4.5-4.5"/>'
+  party:'<path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-3.9 3.9"/><path d="M15 6.5a4.5 4.5 0 0 0-4.5-4.5"/>',
+  mail:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  music:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  star:'<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.12 2.12 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.12 2.12 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.12 2.12 0 0 0-1.973 0L6.29 21.01a.53.53 0 0 1-.771-.56l.882-5.139a2.12 2.12 0 0 0-.611-1.879L2.053 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.12 2.12 0 0 0 1.597-1.16z"/>'
 };
 function icon(name, size, color) {
   size = size || 18;
@@ -163,10 +197,14 @@ function icon(name, size, color) {
 var THEMES = {
   kirana:{ name:"Kirana", tag:"Elegan · botani", icon:"leaf", swatch:["#f7f4ee","#7a8b6f","#b08d57"],
     vars:{bg:"#f6f2ea",bg2:"#efe9dc",text:"#3a4a3f",muted:"#8a917f",accent:"#7a8b6f",accent2:"#b08d57",card:"#fffdf8",radius:"4px",display:"'Cormorant Garamond', Georgia, serif",body:"'Marcellus', Georgia, serif"} },
+  senja:{ name:"Senja", tag:"Romantis · sunset", icon:"sun", swatch:["#ffe0d6","#e26d5c","#b5838d"],
+    vars:{bg:"#fff1e9",bg2:"#ffe1ec",text:"#5a3d4f",muted:"#a3808f",accent:"#e26d5c",accent2:"#b5838d",card:"#fff8f3",radius:"12px",display:"'Cormorant Garamond', Georgia, serif",body:"'Marcellus', Georgia, serif"} },
   pesta:{ name:"Pesta", tag:"Ceria · warna-warni", icon:"party", swatch:["#ff5b7f","#ffd23f","#4ac6d2"],
     vars:{bg:"#fff8f2",bg2:"#ffeef4",text:"#3d2b4f",muted:"#9b8aa8",accent:"#ff5b7f",accent2:"#4ac6d2",card:"#ffffff",radius:"22px",display:"'Poppins', system-ui, sans-serif",body:"'Poppins', system-ui, sans-serif"} },
   nokta:{ name:"Nokta", tag:"Modern · dramatis", icon:"gem", swatch:["#0e0f1a","#d4af37","#6c5ce7"],
     vars:{bg:"#0e0f1a",bg2:"#15172a",text:"#efeaff",muted:"#8b88a8",accent:"#d4af37",accent2:"#8f7bff",card:"#171932",radius:"6px",display:"'Playfair Display', Georgia, serif",body:"'Poppins', system-ui, sans-serif"} },
+  klasik:{ name:"Klasik", tag:"Minimalis · hitam-putih", icon:"star", swatch:["#fafafa","#1a1a1a","#8a8a8a"],
+    vars:{bg:"#fbfbfa",bg2:"#f1f0ee",text:"#1a1a1a",muted:"#8a8a8a",accent:"#1a1a1a",accent2:"#9a9a9a",card:"#ffffff",radius:"2px",display:"'Playfair Display', Georgia, serif",body:"'Poppins', system-ui, sans-serif"} },
   wastra:{ name:"Wastra", tag:"Tradisional · batik", icon:"sparkles", swatch:["#f3e7d3","#8b2e2e","#b8860b"],
     vars:{bg:"#f3e7d1",bg2:"#ecdcbe",text:"#4a2c1a",muted:"#9c7b56",accent:"#8b2e2e",accent2:"#b8860b",card:"#fbf5e8",radius:"3px",display:"'Playfair Display', Georgia, serif",body:"'Cormorant Garamond', Georgia, serif"} }
 };
@@ -178,21 +216,24 @@ var state = {
   date: future.toISOString().slice(0,16),
   venue:"Gedung Serbaguna Melati", address:"Jl. Merdeka No. 10, Jakarta Pusat",
   message:"Dengan penuh syukur, kami mengundang Bapak/Ibu/Saudara/i untuk hadir dan memberikan doa restu pada hari bahagia kami.",
-  photos:[], theme:"kirana",
-  features:{ countdown:true, rsvp:true, map:true, gallery:false }
+  guest:"", musicUrl:"", photos:[], theme:"kirana",
+  features:{ cover:true, countdown:true, rsvp:true, map:true, music:false, gallery:false }
 };
+var coverOpen = false;
+var musicPlaying = false;
 
 /* ---------- Helpers ---------- */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 function slug(s){ return (s||"acara").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40); }
 function fmtDate(iso){ if(!iso) return ""; var d=new Date(iso); if(isNaN(d)) return ""; return d.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"}); }
 function fmtTime(iso){ if(!iso) return ""; var d=new Date(iso); if(isNaN(d)) return ""; return d.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})+" WIB"; }
+function themeVars(v){ return "--bg:"+v.bg+";--bg2:"+v.bg2+";--text:"+v.text+";--muted:"+v.muted+";--accent:"+v.accent+";--accent2:"+v.accent2+";--card:"+v.card+";--radius:"+v.radius+";--display:"+v.display+";--body:"+v.body+";"; }
 
-/* ---------- Divider per theme ---------- */
 function divider(t){
-  if(t==="kirana") return '<svg width="120" height="20" viewBox="0 0 120 20" style="margin:6px auto;display:block"><line x1="0" y1="10" x2="45" y2="10" stroke="var(--accent2)" stroke-width="1"/><line x1="75" y1="10" x2="120" y2="10" stroke="var(--accent2)" stroke-width="1"/><path d="M60 3 C 66 8, 66 12, 60 17 C 54 12, 54 8, 60 3 Z" fill="var(--accent)"/></svg>';
+  if(t==="kirana"||t==="senja") return '<svg width="120" height="20" viewBox="0 0 120 20" style="margin:6px auto;display:block"><line x1="0" y1="10" x2="45" y2="10" stroke="var(--accent2)" stroke-width="1"/><line x1="75" y1="10" x2="120" y2="10" stroke="var(--accent2)" stroke-width="1"/><path d="M60 3 C 66 8, 66 12, 60 17 C 54 12, 54 8, 60 3 Z" fill="var(--accent)"/></svg>';
   if(t==="wastra") return '<div style="height:14px;margin:8px auto;width:160px;background:repeating-linear-gradient(90deg,var(--accent) 0 6px,transparent 6px 12px);opacity:.7"></div>';
   if(t==="nokta") return '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0"><div style="height:1px;width:50px;background:var(--accent)"></div>'+icon("gem",12,"var(--accent)")+'<div style="height:1px;width:50px;background:var(--accent)"></div></div>';
+  if(t==="klasik") return '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0"><div style="height:1px;width:60px;background:var(--muted)"></div><span style="width:5px;height:5px;border-radius:99px;background:var(--text)"></span><div style="height:1px;width:60px;background:var(--muted)"></div></div>';
   return '<div style="display:flex;justify-content:center;gap:6px;margin:8px 0"><span style="width:8px;height:8px;border-radius:99px;background:#ff5b7f"></span><span style="width:8px;height:8px;border-radius:99px;background:#ffd23f"></span><span style="width:8px;height:8px;border-radius:99px;background:#4ac6d2"></span></div>';
 }
 function confetti(){
@@ -207,12 +248,11 @@ function confetti(){
 /* ---------- Build preview ---------- */
 function buildPreview(){
   var t=THEMES[state.theme], v=t.vars, f=state.features;
-  var styleVars="--bg:"+v.bg+";--bg2:"+v.bg2+";--text:"+v.text+";--muted:"+v.muted+";--accent:"+v.accent+";--accent2:"+v.accent2+";--card:"+v.card+";--radius:"+v.radius+";--display:"+v.display+";--body:"+v.body+";";
+  var styleVars=themeVars(v);
   var mapUrl="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(state.address||state.venue||"");
   var html='<div class="inv" style="'+styleVars+'">';
   if(state.theme==="pesta") html+=confetti();
 
-  // hero
   html+='<div class="s" style="padding-top:44px;padding-bottom:30px'+(state.theme==="nokta"?';border-bottom:1px solid color-mix(in srgb, var(--accent) 35%, transparent)':'')+'">';
   html+='<div class="lab" style="color:var(--accent2)">Undangan '+esc(state.kind||"Acara")+'</div>';
   html+='<h1 style="font-weight:'+(state.theme==="pesta"?"700":"500")+'">'+esc(state.title||"Judul Acara")+'</h1>';
@@ -221,10 +261,8 @@ function buildPreview(){
   if(state.date){ html+='<div style="margin-top:6px"><p class="datebig">'+esc(fmtDate(state.date))+'</p><p class="datesm">'+esc(fmtTime(state.date))+'</p></div>'; }
   html+='</div>';
 
-  // message
-  if(state.message){ html+='<div class="s" style="padding-top:6px"><p class="msg" style="font-style:'+(state.theme==="kirana"?"italic":"normal")+'">'+esc(state.message)+'</p></div>'; }
+  if(state.message){ html+='<div class="s" style="padding-top:6px"><p class="msg" style="font-style:'+(state.theme==="kirana"||state.theme==="senja"?"italic":"normal")+'">'+esc(state.message)+'</p></div>'; }
 
-  // countdown
   if(f.countdown && state.date){
     html+='<div class="s"><div class="lab">Menuju Hari Bahagia</div><div class="cd">'
       +'<div class="cell"><div class="num" id="cd-d">00</div><div class="u">Hari</div></div>'
@@ -234,7 +272,6 @@ function buildPreview(){
       +'</div></div>';
   }
 
-  // map
   if(f.map && (state.venue||state.address)){
     html+='<div class="s"><div class="lab">Lokasi</div>'+icon("mapPin",22,"var(--accent)");
     if(state.venue) html+='<p class="venue">'+esc(state.venue)+'</p>';
@@ -242,7 +279,6 @@ function buildPreview(){
     html+='<a class="mapbtn" target="_blank" rel="noreferrer" href="'+esc(mapUrl)+'">'+icon("mapPin",14)+' Buka Peta</a></div>';
   }
 
-  // gallery
   if(f.gallery){
     html+='<div class="s"><div class="lab">Galeri</div>';
     if(state.photos.length){
@@ -253,14 +289,12 @@ function buildPreview(){
     html+='</div>';
   }
 
-  // rsvp
   if(f.rsvp){
     html+='<div class="s"><div class="lab">Konfirmasi Kehadiran</div>'
       +'<p class="addr" style="margin-bottom:14px">Mohon konfirmasi kehadiranmu ya.</p>'
       +'<div id="rsvp-box"></div></div>';
   }
 
-  // footer
   html+='<div class="s" style="padding-top:30px">'+icon("heart",16,"var(--accent)")
     +'<p style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-top:8px">Merupakan suatu kehormatan atas kehadiran Anda</p></div>';
 
@@ -268,20 +302,80 @@ function buildPreview(){
   return html;
 }
 
+/* ---------- Cover ---------- */
+function renderCover(){
+  var el=document.getElementById("cover");
+  var t=THEMES[state.theme], v=t.vars;
+  if(!state.features.cover){ el.style.display="none"; return; }
+  el.setAttribute("style", themeVars(v));
+  el.className = "cover" + (coverOpen ? " open" : "");
+  el.style.display = coverOpen ? "none" : "flex";
+  if(coverOpen) return;
+  var guest = state.guest && state.guest.trim() ? esc(state.guest) : "Bapak/Ibu/Saudara/i";
+  el.innerHTML =
+    '<div class="clab">Undangan '+esc(state.kind||"Acara")+'</div>'
+    +'<h2>'+esc(state.title||"Judul Acara")+'</h2>'
+    +(state.date?'<div class="cdate">'+esc(fmtDate(state.date))+'</div>':'')
+    +'<div class="cto">Kepada Yth.</div>'
+    +'<div class="cname">'+guest+'</div>'
+    +'<button class="open-btn" id="open-btn">'+icon("mail",16)+' Buka Undangan</button>';
+  var btn=document.getElementById("open-btn");
+  btn.onclick=function(){
+    coverOpen=true;
+    el.classList.add("open");
+    setTimeout(function(){ el.style.display="none"; }, 850);
+    if(state.features.music && state.musicUrl){ startMusic(); }
+  };
+}
+
+/* ---------- Music ---------- */
+function updateMusic(){
+  var btn=document.getElementById("music-btn"), audio=document.getElementById("bgm");
+  var t=THEMES[state.theme], v=t.vars;
+  if(!state.features.music || !state.musicUrl){ btn.style.display="none"; audio.pause(); musicPlaying=false; return; }
+  if(audio.getAttribute("src")!==state.musicUrl){ audio.setAttribute("src", state.musicUrl); }
+  btn.style.display="grid";
+  btn.style.background=v.accent;
+  btn.className = "music-btn" + (musicPlaying ? " spin" : "");
+  btn.innerHTML = icon("music",20,"#fff");
+  btn.onclick=function(){ if(musicPlaying){ audio.pause(); musicPlaying=false; } else { startMusic(); } updateMusic(); };
+}
+function startMusic(){
+  var audio=document.getElementById("bgm");
+  if(!state.musicUrl) return;
+  if(audio.getAttribute("src")!==state.musicUrl) audio.setAttribute("src", state.musicUrl);
+  var p=audio.play();
+  if(p && p.then){ p.then(function(){ musicPlaying=true; updateMusic(); }).catch(function(){ musicPlaying=false; updateMusic(); }); }
+  else { musicPlaying=true; updateMusic(); }
+}
+
 /* ---------- RSVP ---------- */
 function rsvpKey(){ return "rsvp:"+slug(state.title); }
 function getRsvp(){ try{ var r=localStorage.getItem(rsvpKey()); return r?JSON.parse(r):[]; }catch(e){ return []; } }
 var rsvpDraft={ name:"", count:1, attend:"hadir", done:false };
 
+function sendRsvp(entry){
+  if(RSVP_ENDPOINT){
+    return fetch(RSVP_ENDPOINT, { method:"POST", headers:{ "Content-Type":"application/json", "Accept":"application/json" }, body:JSON.stringify(entry) })
+      .then(function(r){ if(!r.ok) throw new Error("gagal"); return r; });
+  }
+  var list=getRsvp(); list.unshift(entry);
+  try{ localStorage.setItem(rsvpKey(), JSON.stringify(list)); }catch(e){}
+  return Promise.resolve();
+}
+
 function renderRsvp(){
   var box=document.getElementById("rsvp-box"); if(!box) return;
   if(rsvpDraft.done){
-    var list=getRsvp(), coming=0;
-    for(var i=0;i<list.length;i++){ if(list[i].attend==="hadir") coming+=list[i].count; }
+    var extra="";
+    if(!RSVP_ENDPOINT){
+      var list=getRsvp(), coming=0;
+      for(var i=0;i<list.length;i++){ if(list[i].kehadiran==="hadir") coming+=(list[i].jumlah||0); }
+      extra='<p style="font-size:12px;color:var(--accent);margin-top:8px">'+coming+' tamu akan hadir</p>';
+    }
     box.innerHTML='<div class="thanks">'+icon("check",26,"var(--accent)")
       +'<p style="font-family:var(--display);font-size:19px;margin:8px 0 2px;color:var(--text)">Terima kasih!</p>'
-      +'<p style="font-size:13px;color:var(--muted)">Konfirmasimu sudah tercatat.</p>'
-      +'<p style="font-size:12px;color:var(--accent);margin-top:8px">'+coming+' tamu akan hadir</p></div>';
+      +'<p style="font-size:13px;color:var(--muted)">Konfirmasimu sudah tercatat.</p>'+extra+'</div>';
     return;
   }
   box.innerHTML='<div class="rsvp">'
@@ -290,22 +384,21 @@ function renderRsvp(){
     +'<button data-att="tidak" class="'+(rsvpDraft.attend==="tidak"?"sel":"")+'">Tidak</button></div>'
     +(rsvpDraft.attend==="hadir"?'<input id="rv-count" type="number" min="1" max="20" value="'+esc(rsvpDraft.count)+'" placeholder="Jumlah tamu">':'')
     +'<button class="send" id="rv-send">Kirim Konfirmasi</button></div>';
-  var nm=document.getElementById("rv-name");
-  if(nm) nm.oninput=function(){ rsvpDraft.name=this.value; };
-  var ct=document.getElementById("rv-count");
-  if(ct) ct.oninput=function(){ rsvpDraft.count=this.value; };
+  var nm=document.getElementById("rv-name"); if(nm) nm.oninput=function(){ rsvpDraft.name=this.value; };
+  var ct=document.getElementById("rv-count"); if(ct) ct.oninput=function(){ rsvpDraft.count=this.value; };
   var atts=box.querySelectorAll(".att button");
   for(var i=0;i<atts.length;i++){ atts[i].onclick=function(){ rsvpDraft.attend=this.getAttribute("data-att"); renderRsvp(); }; }
-  document.getElementById("rv-send").onclick=function(){
+  var send=document.getElementById("rv-send");
+  send.onclick=function(){
     if(!rsvpDraft.name.trim()) return;
-    var list=getRsvp();
-    list.unshift({ name:rsvpDraft.name.trim(), count:Number(rsvpDraft.count)||1, attend:rsvpDraft.attend, at:Date.now() });
-    try{ localStorage.setItem(rsvpKey(), JSON.stringify(list)); }catch(e){}
-    rsvpDraft.done=true; renderRsvp();
+    var entry={ acara:state.title, nama:rsvpDraft.name.trim(), kehadiran:rsvpDraft.attend, jumlah:Number(rsvpDraft.count)||1, waktu:new Date().toISOString() };
+    send.disabled=true; send.textContent="Mengirim...";
+    sendRsvp(entry).then(function(){ rsvpDraft.done=true; renderRsvp(); })
+    .catch(function(){ send.disabled=false; send.textContent="Coba lagi"; });
   };
 }
 
-/* ---------- Countdown tick ---------- */
+/* ---------- Countdown ---------- */
 function tick(){
   if(!(state.features.countdown && state.date)) return;
   var el=document.getElementById("cd-d"); if(!el) return;
@@ -318,14 +411,16 @@ function tick(){
   document.getElementById("cd-s").textContent=p(s);
 }
 
-/* ---------- Render preview + rebind ---------- */
+/* ---------- Render ---------- */
 function renderPreview(){
   document.getElementById("preview").innerHTML=buildPreview();
   renderRsvp();
+  renderCover();
+  updateMusic();
   tick();
 }
 
-/* ---------- Build editor ---------- */
+/* ---------- Editor ---------- */
 function buildEditor(){
   var e=document.getElementById("editor");
   var themeCards="";
@@ -350,16 +445,19 @@ function buildEditor(){
     +'<label class="field"><span>Nama tempat</span><input data-k="venue" value="'+esc(state.venue)+'"></label>'
     +'<label class="field"><span>Alamat lengkap (untuk peta)</span><input data-k="address" value="'+esc(state.address)+'"></label>'
     +'<label class="field"><span>Pesan / kata sambutan</span><textarea data-k="message">'+esc(state.message)+'</textarea></label>'
+    +'<label class="field"><span>Nama tamu di sampul (opsional)</span><input data-k="guest" value="'+esc(state.guest)+'" placeholder="Kosongkan untuk sapaan umum"></label>'
     +'<div class="sec-title"><span class="n">2</span>'+icon("palette",15,"#8b88a8")+'<span class="t">Pilih Desain</span></div>'
     +'<div class="themes">'+themeCards+'</div>'
     +'<div class="sec-title"><span class="n">3</span>'+icon("sparkles",15,"#8b88a8")+'<span class="t">Fitur</span></div>'
+    +tg("cover","mail","Sampul pembuka","Layar \'Buka Undangan\'")
     +tg("countdown","clock","Hitung mundur","Timer menuju hari-H")
     +tg("rsvp","users","RSVP","Tamu konfirmasi kehadiran")
     +tg("map","mapPin","Peta lokasi","Tombol buka Google Maps")
+    +tg("music","music","Musik latar","Diputar saat sampul dibuka")
+    +'<div id="music-wrap"></div>'
     +tg("gallery","image","Galeri foto","Kumpulan foto acara")
     +'<div id="gal-wrap"></div>';
 
-  // bind text inputs
   var inputs=e.querySelectorAll("[data-k]");
   for(var i=0;i<inputs.length;i++){
     inputs[i].addEventListener("input", function(){
@@ -368,27 +466,38 @@ function buildEditor(){
       renderPreview();
     });
   }
-  // theme cards
   var cards=e.querySelectorAll("[data-theme]");
   for(var j=0;j<cards.length;j++){
     cards[j].addEventListener("click", function(){ state.theme=this.getAttribute("data-theme"); buildEditor(); renderPreview(); });
   }
-  // toggles
   var togs=e.querySelectorAll("[data-feat]");
   for(var k=0;k<togs.length;k++){
-    togs[k].addEventListener("click", function(){ var key=this.getAttribute("data-feat"); state.features[key]=!state.features[key]; buildEditor(); renderPreview(); });
+    togs[k].addEventListener("click", function(){
+      var key=this.getAttribute("data-feat");
+      state.features[key]=!state.features[key];
+      if(key==="cover" && state.features.cover) coverOpen=false;
+      buildEditor(); renderPreview();
+    });
   }
+  renderMusicBox();
   renderGalleryBox();
+}
+
+function renderMusicBox(){
+  var wrap=document.getElementById("music-wrap"); if(!wrap) return;
+  if(!state.features.music){ wrap.innerHTML=""; return; }
+  wrap.innerHTML='<div class="subbox"><div class="row"><input id="music-input" placeholder="Tempel URL file musik (.mp3)" value="'+esc(state.musicUrl)+'"></div>'
+    +'<small>Gunakan tautan langsung ke file audio (.mp3). Musik mulai otomatis saat tamu menekan "Buka Undangan".</small></div>';
+  var inp=document.getElementById("music-input");
+  inp.addEventListener("input", function(){ state.musicUrl=this.value.trim(); updateMusic(); });
 }
 
 function renderGalleryBox(){
   var wrap=document.getElementById("gal-wrap"); if(!wrap) return;
   if(!state.features.gallery){ wrap.innerHTML=""; return; }
   var tags="";
-  for(var i=0;i<state.photos.length;i++){
-    tags+='<span>Foto '+(i+1)+'<i data-del="'+i+'">'+icon("trash",12)+'</i></span>';
-  }
-  wrap.innerHTML='<div class="galbox"><div class="row"><input id="gal-input" placeholder="Tempel URL gambar..."><button class="add" id="gal-add">'+icon("plus",16)+'</button></div>'
+  for(var i=0;i<state.photos.length;i++){ tags+='<span>Foto '+(i+1)+'<i data-del="'+i+'">'+icon("trash",12)+'</i></span>'; }
+  wrap.innerHTML='<div class="subbox"><div class="row"><input id="gal-input" placeholder="Tempel URL gambar..."><button class="add" id="gal-add">'+icon("plus",16)+'</button></div>'
     +(state.photos.length?'<div class="galtags">'+tags+'</div>':'')+'</div>';
   var inp=document.getElementById("gal-input");
   function add(){ if(!inp.value.trim()) return; state.photos.push(inp.value.trim()); inp.value=""; renderGalleryBox(); renderPreview(); }
@@ -400,7 +509,7 @@ function renderGalleryBox(){
   }
 }
 
-/* ---------- Tabs (mobile) ---------- */
+/* ---------- Tabs ---------- */
 function initTabs(){
   document.getElementById("ic-logo").innerHTML=icon("sparkles",17,"#fff");
   document.getElementById("tab-edit").innerHTML=icon("pencil",14)+" Edit";
@@ -417,6 +526,9 @@ function initTabs(){
 }
 
 /* ---------- Init ---------- */
+(function(){
+  try{ var to=new URLSearchParams(location.search).get("to"); if(to) state.guest=to; }catch(e){}
+})();
 initTabs();
 buildEditor();
 renderPreview();

@@ -382,7 +382,7 @@ var state = {
   date: future.toISOString().slice(0,16),
   venue:"Gedung Serbaguna Melati", address:"Jl. Merdeka No. 10, Jakarta Pusat",
   message:"Dengan penuh syukur, kami mengundang Bapak/Ibu/Saudara/i untuk hadir dan memberikan doa restu pada hari bahagia kami.",
-  guest:"", musicUrl:"", photos:[], theme:"kirana", slug:"",
+  guest:"", musicUrl:"", photos:[], theme:"kirana", slug:"", waGreeting:"netral",
   schedule:[], gifts:[],
   features:{ cover:true, countdown:true, rsvp:true, map:true, music:false, gallery:false, schedule:false, gift:false }
 };
@@ -675,6 +675,7 @@ function buildEditor(){
     +'<label class="field"><span>Pesan / kata sambutan</span><textarea data-k="message">'+esc(state.message)+'</textarea></label>'
     +'<label class="field"><span>Nama tamu di sampul (opsional)</span><input data-k="guest" value="'+esc(state.guest)+'" placeholder="Kosongkan untuk sapaan umum"></label>'
     +'<label class="field"><span>Nama link undangan (untuk dibagikan)</span><input data-k="slug" value="'+esc(state.slug)+'" placeholder="mis. andi-sinta (otomatis jika kosong)"></label>'
+    +'<label class="field"><span>Gaya salam pesan WhatsApp</span><select data-k="waGreeting" style="width:100%;padding:11px 12px;border-radius:10px;font-size:14px;border:1px solid var(--line-2,#33354f);background:#fff;color:var(--ink,#2b2540);outline:none;font-family:inherit"><option value="netral"'+(state.waGreeting==="islami"?"":" selected")+'>Netral & sopan</option><option value="islami"'+(state.waGreeting==="islami"?" selected":"")+'>Islami (Assalamu\'alaikum)</option></select></label>'
     +'<div class="sec-title"><span class="n">2</span>'+icon("palette",15,"#8b88a8")+'<span class="t">Pilih Desain</span></div>'
     +'<div class="themes">'+themeCards+'</div>'
     +'<div class="sec-title"><span class="n">3</span>'+icon("sparkles",15,"#8b88a8")+'<span class="t">Fitur</span></div>'
@@ -1030,10 +1031,46 @@ setInterval(tick, 1000);
     const nama = (window.prompt("Nama tamu (opsional, untuk sapaan):", "") || "").trim();
     let url = publicUrl();
     if(nama) url += (url.indexOf("?")>=0?"&":"?") + "to=" + encodeURIComponent(nama);
-    const sapaan = nama ? ("Kepada Yth. " + nama + ",\n\n") : "";
-    const teks = sapaan + "Dengan hormat, kami mengundang Anda. Silakan buka undangan digital kami:\n" + url;
+    const teks = buildWaText(nama, url);
     window.open("https://wa.me/?text=" + encodeURIComponent(teks), "_blank");
   };
+
+  function buildWaText(nama, url){
+    const s = window.state;
+    const style = s.waGreeting || "netral";
+    const sapaan = nama ? ("Bapak/Ibu/Saudara/i " + nama) : "Bapak/Ibu/Saudara/i";
+    const kind = (s.kind || "acara");
+    const L = [];
+    L.push("Kepada Yth.");
+    L.push(sapaan);
+    L.push("");
+    if(style === "islami"){
+      L.push("Assalamu'alaikum Warahmatullahi Wabarakatuh");
+      L.push("");
+      L.push("Bismillahirrahmanirrahim, tanpa mengurangi rasa hormat kami bermaksud mengundang Bapak/Ibu/Saudara/i pada acara " + kind + " kami:");
+    } else {
+      L.push("Tanpa mengurangi rasa hormat, kami bermaksud mengundang Bapak/Ibu/Saudara/i pada acara " + kind + " kami:");
+    }
+    L.push("");
+    if(s.title) L.push("*" + s.title + "*");
+    if(s.hosts) L.push(s.hosts);
+    if(s.date && window.fmtDate){ L.push("🗓️ " + window.fmtDate(s.date)); }
+    if(s.date && window.fmtTime){ L.push("🕙 " + window.fmtTime(s.date)); }
+    var loc = [s.venue, s.address].filter(function(x){return x;}).join(", ");
+    if(loc) L.push("📍 " + loc);
+    L.push("");
+    if(style === "islami"){
+      L.push("Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.");
+    } else {
+      L.push("Merupakan suatu kehormatan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir.");
+    }
+    L.push("");
+    L.push("Buka undangan lengkap:");
+    L.push(url);
+    L.push("");
+    L.push(style === "islami" ? "Wassalamu'alaikum Warahmatullahi Wabarakatuh 🙏" : "Terima kasih 🙏");
+    return L.join("\n");
+  }
 
   // ---- Daftar Tamu (RSVP) ----
   $("cb-guests").onclick = openGuests;

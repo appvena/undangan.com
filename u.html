@@ -70,7 +70,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-  import { getFirestore, doc, getDoc, addDoc, collection, serverTimestamp }
+  import { getFirestore, doc, getDoc, addDoc, collection, serverTimestamp, query, where, getDocs, limit }
     from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -159,6 +159,28 @@
     if(f.gallery && state.photos && state.photos.length){
       html+='<div class="s"><div class="lab">Galeri</div><div class="grid">';
       for(let i=0;i<state.photos.length;i++) html+='<div><img src="'+esc(state.photos[i])+'" alt="" onerror="this.style.opacity=.2"></div>';
+      html+='</div></div>';
+    }
+    if(f.schedule && state.schedule && state.schedule.length){
+      html+='<div class="s"><div class="lab">Susunan Acara</div><div style="max-width:380px;margin:0 auto;text-align:left">';
+      for(let si=0; si<state.schedule.length; si++){ const it=state.schedule[si];
+        html+='<div style="display:flex;gap:12px;padding:11px 0;border-bottom:1px solid color-mix(in srgb,var(--muted) 22%,transparent)">'
+          +'<div style="min-width:82px;font-family:var(--display);color:var(--accent);font-size:16px">'+esc(it.time||"")+'</div>'
+          +'<div><div style="font-weight:600">'+esc(it.name||"")+'</div>'+(it.note?'<div style="font-size:12px;color:var(--muted);margin-top:2px">'+esc(it.note)+'</div>':'')+'</div></div>';
+      }
+      html+='</div></div>';
+    }
+    if(f.gift && state.gifts && state.gifts.length){
+      html+='<div class="s"><div class="lab">Amplop Digital</div>'
+        +'<p class="addr" style="margin-bottom:14px">Doa restu Anda sudah cukup. Bila ingin memberi tanda kasih, dapat melalui:</p>'
+        +'<div style="max-width:360px;margin:0 auto;display:grid;gap:10px">';
+      for(let gi=0; gi<state.gifts.length; gi++){ const g=state.gifts[gi];
+        html+='<div style="background:var(--card);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-radius:var(--radius);padding:16px;text-align:center">'
+          +'<div style="font-family:var(--display);font-size:18px;color:var(--text)">'+esc(g.bank||"")+'</div>'
+          +'<div style="font-size:19px;letter-spacing:1px;color:var(--accent);margin:6px 0">'+esc(g.number||"")+'</div>'
+          +'<div style="font-size:12px;color:var(--muted)">a.n. '+esc(g.holder||"")+'</div>'
+          +'<button data-n="'+esc(g.number||"")+'" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.getAttribute(\'data-n\'));this.textContent=\'Tersalin \u2713\'" style="margin-top:10px;padding:8px 16px;border-radius:var(--radius);border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Salin No. Rekening</button></div>';
+      }
       html+='</div></div>';
     }
     if(f.rsvp){
@@ -268,13 +290,20 @@
   (async ()=>{
     const params=new URLSearchParams(location.search);
     const id=params.get("id");
+    const uslug=(params.get("u")||"").trim();
     guestName=(params.get("to")||"").trim();
-    if(!id){ showState("Undangan tidak ditemukan.<br>Link tidak lengkap."); return; }
+    if(!id && !uslug){ showState("Undangan tidak ditemukan.<br>Link tidak lengkap."); return; }
     try{
-      const snap=await getDoc(doc(db,"undangan",id));
-      if(!snap.exists()){ showState("Undangan tidak ditemukan atau sudah dihapus."); return; }
-      const d=snap.data();
-      state=d.state||{}; themeKey=state.theme||"kirana"; ownerUid=d.ownerUid||null; invitationId=id;
+      let d=null;
+      if(uslug){
+        const qs=await getDocs(query(collection(db,"undangan"), where("slug","==",uslug), limit(1)));
+        qs.forEach(doc0=>{ if(!d){ d=doc0.data(); invitationId=doc0.id; } });
+      } else {
+        const snap=await getDoc(doc(db,"undangan",id));
+        if(snap.exists()){ d=snap.data(); invitationId=id; }
+      }
+      if(!d){ showState("Undangan tidak ditemukan atau sudah dihapus."); return; }
+      state=d.state||{}; themeKey=state.theme||"kirana"; ownerUid=d.ownerUid||null;
       document.title = (state.title? state.title+" — Undangan" : "Undangan");
       buildInvitation(); renderCover(); updateMusic(); hideState();
     }catch(e){

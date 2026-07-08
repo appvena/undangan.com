@@ -292,6 +292,7 @@
   </div>
 </div>
 <audio id="bgm" loop></audio>
+<div id="yt-wrap" style="position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden"><div id="yt"></div></div>
 
 <script>
 /* =====================================================================
@@ -317,8 +318,8 @@ var RSVP_ENDPOINT = "";
    Jika dibiarkan kosong, tombol upload disembunyikan; kamu masih bisa
    menempel URL manual seperti biasa.
    ===================================================================== */
-var CLOUDINARY_CLOUD_NAME = "";
-var CLOUDINARY_UPLOAD_PRESET = "";
+var CLOUDINARY_CLOUD_NAME = "dtpow34rz";
+var CLOUDINARY_UPLOAD_PRESET = "undangan.com";
 
 function cloudinaryReady(){ return !!(CLOUDINARY_CLOUD_NAME && CLOUDINARY_UPLOAD_PRESET); }
 function uploadToCloudinary(file){
@@ -518,25 +519,62 @@ function renderCover(){
   };
 }
 
-/* ---------- Music ---------- */
+/* ---------- Music (URL mp3 atau link YouTube) ---------- */
+function ytId(url){
+  if(!url) return null;
+  var m=String(url).match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m?m[1]:null;
+}
+var ytPlayer=null, ytCurrent="";
+function loadYTApi(cb){
+  if(window.YT && window.YT.Player){ cb(); return; }
+  var prev=window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady=function(){ if(prev) prev(); cb(); };
+  if(!document.getElementById("yt-api")){
+    var s=document.createElement("script"); s.id="yt-api"; s.src="https://www.youtube.com/iframe_api";
+    document.head.appendChild(s);
+  }
+}
+function ensureYt(id, autoplay){
+  loadYTApi(function(){
+    if(!ytPlayer){
+      ytPlayer=new YT.Player("yt",{height:"1",width:"1",videoId:id,
+        playerVars:{autoplay:autoplay?1:0,controls:0,loop:1,playlist:id,playsinline:1},
+        events:{ onReady:function(e){ ytCurrent=id; if(autoplay){ try{e.target.playVideo();}catch(x){} musicPlaying=true; updateMusic(); } },
+                 onStateChange:function(e){ if(e.data===YT.PlayerState.ENDED){ try{ytPlayer.playVideo();}catch(x){} } } }});
+    } else if(ytCurrent!==id){
+      ytCurrent=id; try{ytPlayer.loadVideoById(id);}catch(x){}
+      if(autoplay){ musicPlaying=true; updateMusic(); } else { try{ytPlayer.pauseVideo();}catch(x){} }
+    } else if(autoplay){ try{ytPlayer.playVideo();}catch(x){} musicPlaying=true; updateMusic(); }
+  });
+}
 function updateMusic(){
   var btn=document.getElementById("music-btn"), audio=document.getElementById("bgm");
-  var t=THEMES[state.theme], v=t.vars;
-  if(!state.features.music || !state.musicUrl){ btn.style.display="none"; audio.pause(); musicPlaying=false; return; }
-  if(audio.getAttribute("src")!==state.musicUrl){ audio.setAttribute("src", state.musicUrl); }
+  var v=THEMES[state.theme].vars;
+  if(!state.features.music || !state.musicUrl){ btn.style.display="none"; if(audio) audio.pause(); if(ytPlayer){ try{ytPlayer.pauseVideo();}catch(x){} } musicPlaying=false; return; }
+  var yid=ytId(state.musicUrl);
+  if(yid){ ensureYt(yid, false); }
+  else { if(audio.getAttribute("src")!==state.musicUrl) audio.setAttribute("src", state.musicUrl); }
   btn.style.display="grid";
   btn.style.background=v.accent;
-  btn.className = "music-btn" + (musicPlaying ? " spin" : "");
-  btn.innerHTML = icon("music",20,"#fff");
-  btn.onclick=function(){ if(musicPlaying){ audio.pause(); musicPlaying=false; } else { startMusic(); } updateMusic(); };
+  btn.className="music-btn"+(musicPlaying?" spin":"");
+  btn.innerHTML=icon("music",20,"#fff");
+  btn.onclick=function(){ if(musicPlaying){ pauseMusic(); } else { startMusic(); } };
 }
 function startMusic(){
-  var audio=document.getElementById("bgm");
   if(!state.musicUrl) return;
+  var yid=ytId(state.musicUrl);
+  if(yid){ ensureYt(yid, true); return; }
+  var audio=document.getElementById("bgm");
   if(audio.getAttribute("src")!==state.musicUrl) audio.setAttribute("src", state.musicUrl);
   var p=audio.play();
   if(p && p.then){ p.then(function(){ musicPlaying=true; updateMusic(); }).catch(function(){ musicPlaying=false; updateMusic(); }); }
   else { musicPlaying=true; updateMusic(); }
+}
+function pauseMusic(){
+  var audio=document.getElementById("bgm"); if(audio) audio.pause();
+  if(ytPlayer){ try{ytPlayer.pauseVideo();}catch(x){} }
+  musicPlaying=false; updateMusic();
 }
 
 /* ---------- RSVP ---------- */
@@ -729,9 +767,9 @@ function renderMusicBox(){
     : '';
   wrap.innerHTML='<div class="subbox">'
     + uploadUI
-    + '<div class="row"><input id="music-input" placeholder="URL file musik (.mp3)" value="'+esc(state.musicUrl)+'"></div>'
+    + '<div class="row"><input id="music-input" placeholder="Link YouTube atau URL .mp3" value="'+esc(state.musicUrl)+'"></div>'
     + '<div id="music-status" class="ustat"></div>'
-    + '<small>Musik mulai otomatis saat tamu menekan "Buka Undangan".</small></div>';
+    + '<small>Boleh tempel link YouTube atau URL file .mp3. Musik mulai otomatis saat tamu menekan "Buka Undangan".</small></div>';
   var inp=document.getElementById("music-input");
   inp.addEventListener("input", function(){ state.musicUrl=this.value.trim(); updateMusic(); });
   if(cloudinaryReady()){

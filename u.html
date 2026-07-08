@@ -66,6 +66,7 @@
 <button class="music-btn" id="music-btn"></button>
 <div class="cover" id="cover" style="display:none"></div>
 <audio id="bgm" loop></audio>
+<div id="yt-wrap" style="position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden"><div id="yt"></div></div>
 <div id="state-box"><div class="in">Memuat undangan…</div></div>
 
 <script type="module">
@@ -265,22 +266,59 @@
     };
   }
 
-  /* ---------- Music ---------- */
+  /* ---------- Music (URL mp3 atau link YouTube) ---------- */
+  function ytId(url){
+    if(!url) return null;
+    const m=String(url).match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    return m?m[1]:null;
+  }
+  let ytPlayer=null, ytCurrent="";
+  function loadYTApi(cb){
+    if(window.YT && window.YT.Player){ cb(); return; }
+    const prev=window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady=function(){ if(prev) prev(); cb(); };
+    if(!document.getElementById("yt-api")){
+      const s=document.createElement("script"); s.id="yt-api"; s.src="https://www.youtube.com/iframe_api";
+      document.head.appendChild(s);
+    }
+  }
+  function ensureYt(id, autoplay){
+    loadYTApi(function(){
+      if(!ytPlayer){
+        ytPlayer=new YT.Player("yt",{height:"1",width:"1",videoId:id,
+          playerVars:{autoplay:autoplay?1:0,controls:0,loop:1,playlist:id,playsinline:1},
+          events:{ onReady:function(e){ ytCurrent=id; if(autoplay){ try{e.target.playVideo();}catch(x){} musicPlaying=true; updateMusic(); } },
+                   onStateChange:function(e){ if(e.data===YT.PlayerState.ENDED){ try{ytPlayer.playVideo();}catch(x){} } } }});
+      } else if(ytCurrent!==id){
+        ytCurrent=id; try{ytPlayer.loadVideoById(id);}catch(x){}
+        if(autoplay){ musicPlaying=true; updateMusic(); } else { try{ytPlayer.pauseVideo();}catch(x){} }
+      } else if(autoplay){ try{ytPlayer.playVideo();}catch(x){} musicPlaying=true; updateMusic(); }
+    });
+  }
   function updateMusic(){
     const btn=document.getElementById("music-btn"), audio=document.getElementById("bgm"), v=THEMES[themeKey].vars;
     if(!state.features || !state.features.music || !state.musicUrl){ btn.style.display="none"; return; }
-    if(audio.getAttribute("src")!==state.musicUrl) audio.setAttribute("src", state.musicUrl);
+    const yid=ytId(state.musicUrl);
+    if(yid){ ensureYt(yid, false); }
+    else if(audio.getAttribute("src")!==state.musicUrl){ audio.setAttribute("src", state.musicUrl); }
     btn.style.display="grid"; btn.style.background=v.accent;
     btn.className="music-btn"+(musicPlaying?" spin":""); btn.innerHTML=icon("music",20,"#fff");
-    btn.onclick=()=>{ if(musicPlaying){ audio.pause(); musicPlaying=false; } else { startMusic(); } updateMusic(); };
+    btn.onclick=()=>{ if(musicPlaying){ pauseMusic(); } else { startMusic(); } };
   }
   function startMusic(){
-    const audio=document.getElementById("bgm");
     if(!state.musicUrl) return;
+    const yid=ytId(state.musicUrl);
+    if(yid){ ensureYt(yid, true); return; }
+    const audio=document.getElementById("bgm");
     if(audio.getAttribute("src")!==state.musicUrl) audio.setAttribute("src", state.musicUrl);
     const p=audio.play();
     if(p&&p.then) p.then(()=>{ musicPlaying=true; updateMusic(); }).catch(()=>{ musicPlaying=false; updateMusic(); });
     else { musicPlaying=true; updateMusic(); }
+  }
+  function pauseMusic(){
+    const audio=document.getElementById("bgm"); if(audio) audio.pause();
+    if(ytPlayer){ try{ytPlayer.pauseVideo();}catch(x){} }
+    musicPlaying=false; updateMusic();
   }
 
   /* ---------- Load ---------- */

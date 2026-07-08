@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Undangan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Marcellus&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing:border-box; }
+  html, body { margin:0; padding:0; }
+  body { font-family:'Poppins',system-ui,sans-serif; background:#000; }
+  @keyframes fall { to { transform:translateY(120vh) rotate(360deg); } }
+  @keyframes pulse { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.05);} }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  #screen { min-height:100vh; position:relative; overflow-x:hidden; }
+
+  .inv { font-family:var(--body); color:var(--text); background:linear-gradient(160deg,var(--bg),var(--bg2)); min-height:100vh; position:relative; padding:0 0 48px; }
+  .inv .s { padding:26px 24px; text-align:center; position:relative; z-index:1; max-width:520px; margin:0 auto; }
+  .inv .lab { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .inv h1 { font-family:var(--display); font-size:44px; line-height:1.1; margin:6px 0 4px; color:var(--text); }
+  .inv .hosts { font-size:15px; color:var(--muted); margin-top:6px; }
+  .inv .datebig { font-family:var(--display); font-size:19px; color:var(--accent); }
+  .inv .datesm { font-size:13px; color:var(--muted); margin-top:2px; }
+  .inv .msg { font-size:15px; line-height:1.7; color:var(--text); max-width:400px; margin:0 auto; }
+  .inv .cd { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .inv .cd .cell { min-width:62px; padding:12px 8px; border-radius:var(--radius); background:var(--card); border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+  .inv .cd .num { font-family:var(--display); font-size:28px; font-weight:600; color:var(--accent); line-height:1; }
+  .inv .cd .u { font-size:10px; letter-spacing:1px; color:var(--muted); margin-top:4px; text-transform:uppercase; }
+  .inv .venue { font-family:var(--display); font-size:21px; color:var(--text); }
+  .inv .addr { font-size:13px; color:var(--muted); margin:4px auto 0; max-width:340px; }
+  .inv .mapbtn { display:inline-flex; align-items:center; gap:6px; margin-top:12px; padding:10px 20px; border-radius:var(--radius); text-decoration:none; border:1px solid var(--accent); color:var(--accent); font-size:13px; font-weight:600; }
+  .inv .grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; max-width:400px; margin:0 auto; }
+  .inv .grid div { aspect-ratio:1; border-radius:var(--radius); overflow:hidden; background:var(--bg2); }
+  .inv .grid img { width:100%; height:100%; object-fit:cover; }
+  .inv .rsvp { max-width:340px; margin:0 auto; background:var(--card); padding:16px; border-radius:var(--radius); border:1px solid color-mix(in srgb, var(--accent) 22%, transparent); display:grid; gap:10px; }
+  .inv .rsvp input { width:100%; padding:11px 13px; border-radius:var(--radius); font-size:14px; border:1px solid color-mix(in srgb, var(--muted) 45%, transparent); background:var(--card); color:var(--text); outline:none; font-family:inherit; }
+  .inv .rsvp .att { display:flex; gap:8px; }
+  .inv .rsvp .att button { flex:1; padding:10px; border-radius:var(--radius); font-size:13px; cursor:pointer; border:1px solid color-mix(in srgb, var(--accent) 40%, transparent); background:transparent; color:var(--text); font-family:inherit; }
+  .inv .rsvp .att button.sel { background:var(--accent); color:var(--card); }
+  .inv .rsvp .send { padding:12px; border-radius:var(--radius); border:none; cursor:pointer; background:var(--accent); color:var(--card); font-weight:600; font-size:14px; font-family:inherit; }
+  .inv .thanks { text-align:center; padding:18px 12px; background:var(--card); border-radius:var(--radius); border:1px solid color-mix(in srgb, var(--accent) 25%, transparent); max-width:340px; margin:0 auto; }
+  .confetti { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
+  .confetti span { position:absolute; top:-20px; border-radius:2px; opacity:.85; }
+
+  .cover { position:fixed; inset:0; z-index:30; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:34px 28px; background:linear-gradient(160deg,var(--bg),var(--bg2)); color:var(--text); font-family:var(--body); transition:transform .85s ease, opacity .6s ease; }
+  .cover.open { transform:translateY(-100%); opacity:0; pointer-events:none; }
+  .cover .clab { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--accent2); }
+  .cover h2 { font-family:var(--display); font-size:42px; line-height:1.1; margin:14px 0 6px; color:var(--text); }
+  .cover .cdate { font-family:var(--display); font-size:17px; color:var(--accent); margin-bottom:26px; }
+  .cover .cto { font-size:12px; color:var(--muted); margin-bottom:4px; letter-spacing:1px; }
+  .cover .cname { font-family:var(--display); font-size:22px; color:var(--text); margin-bottom:26px; }
+  .cover .open-btn { display:inline-flex; align-items:center; gap:8px; padding:13px 28px; border-radius:var(--radius); border:none; cursor:pointer; background:var(--accent); color:var(--card); font-weight:600; font-size:14px; box-shadow:0 8px 22px -6px color-mix(in srgb, var(--accent) 70%, transparent); animation:pulse 2.4s ease-in-out infinite; }
+
+  .music-btn { position:fixed; right:16px; bottom:16px; z-index:22; width:46px; height:46px; border-radius:99px; border:none; cursor:pointer; display:none; place-items:center; box-shadow:0 6px 16px rgba(0,0,0,.28); color:#fff; }
+  .music-btn.spin svg { animation:spin 4s linear infinite; }
+
+  #state-box { position:fixed; inset:0; display:grid; place-items:center; background:#0e0f1a; color:#cfc9e8; font-size:14px; text-align:center; padding:30px; z-index:50; }
+  #state-box .in { max-width:320px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div id="screen"></div>
+<button class="music-btn" id="music-btn"></button>
+<div class="cover" id="cover" style="display:none"></div>
+<audio id="bgm" loop></audio>
+<div id="state-box"><div class="in">Memuat undangan…</div></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, addDoc, collection, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyASJd4rJIijxKiVfZfHaNRDYRIYBnxXwuQ",
+    authDomain: "undangan-app-d7bf8.firebaseapp.com",
+    projectId: "undangan-app-d7bf8",
+    storageBucket: "undangan-app-d7bf8.firebasestorage.app",
+    messagingSenderId: "29842739425",
+    appId: "1:29842739425:web:9f5baa06784e4a6aafe7a0"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  /* ---------- Icons ---------- */
+  const ICONS = {
+    mapPin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+    heart:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+    check:'<path d="M20 6 9 17l-5-5"/>',
+    gem:'<path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/>',
+    mail:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+    music:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'
+  };
+  const icon = (n,s,c)=>'<svg width="'+(s||18)+'" height="'+(s||18)+'" viewBox="0 0 24 24" fill="none" stroke="'+(c||"currentColor")+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[n]||"")+'</svg>';
+
+  /* ---------- Themes ---------- */
+  const THEMES = {
+    kirana:{vars:{bg:"#f6f2ea",bg2:"#efe9dc",text:"#3a4a3f",muted:"#8a917f",accent:"#7a8b6f",accent2:"#b08d57",card:"#fffdf8",radius:"4px",display:"'Cormorant Garamond', Georgia, serif",body:"'Marcellus', Georgia, serif"}},
+    senja:{vars:{bg:"#fff1e9",bg2:"#ffe1ec",text:"#5a3d4f",muted:"#a3808f",accent:"#e26d5c",accent2:"#b5838d",card:"#fff8f3",radius:"12px",display:"'Cormorant Garamond', Georgia, serif",body:"'Marcellus', Georgia, serif"}},
+    pesta:{vars:{bg:"#fff8f2",bg2:"#ffeef4",text:"#3d2b4f",muted:"#9b8aa8",accent:"#ff5b7f",accent2:"#4ac6d2",card:"#ffffff",radius:"22px",display:"'Poppins', system-ui, sans-serif",body:"'Poppins', system-ui, sans-serif"}},
+    nokta:{vars:{bg:"#0e0f1a",bg2:"#15172a",text:"#efeaff",muted:"#8b88a8",accent:"#d4af37",accent2:"#8f7bff",card:"#171932",radius:"6px",display:"'Playfair Display', Georgia, serif",body:"'Poppins', system-ui, sans-serif"}},
+    klasik:{vars:{bg:"#fbfbfa",bg2:"#f1f0ee",text:"#1a1a1a",muted:"#8a8a8a",accent:"#1a1a1a",accent2:"#9a9a9a",card:"#ffffff",radius:"2px",display:"'Playfair Display', Georgia, serif",body:"'Poppins', system-ui, sans-serif"}},
+    wastra:{vars:{bg:"#f3e7d1",bg2:"#ecdcbe",text:"#4a2c1a",muted:"#9c7b56",accent:"#8b2e2e",accent2:"#b8860b",card:"#fbf5e8",radius:"3px",display:"'Playfair Display', Georgia, serif",body:"'Cormorant Garamond', Georgia, serif"}}
+  };
+
+  /* ---------- Helpers ---------- */
+  const esc = (s)=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const fmtDate = (iso)=>{ if(!iso) return ""; const d=new Date(iso); if(isNaN(d)) return ""; return d.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"}); };
+  const fmtTime = (iso)=>{ if(!iso) return ""; const d=new Date(iso); if(isNaN(d)) return ""; return d.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})+" WIB"; };
+  const themeVars = (v)=>"--bg:"+v.bg+";--bg2:"+v.bg2+";--text:"+v.text+";--muted:"+v.muted+";--accent:"+v.accent+";--accent2:"+v.accent2+";--card:"+v.card+";--radius:"+v.radius+";--display:"+v.display+";--body:"+v.body+";";
+
+  function divider(t){
+    if(t==="kirana"||t==="senja") return '<svg width="120" height="20" viewBox="0 0 120 20" style="margin:6px auto;display:block"><line x1="0" y1="10" x2="45" y2="10" stroke="var(--accent2)" stroke-width="1"/><line x1="75" y1="10" x2="120" y2="10" stroke="var(--accent2)" stroke-width="1"/><path d="M60 3 C 66 8, 66 12, 60 17 C 54 12, 54 8, 60 3 Z" fill="var(--accent)"/></svg>';
+    if(t==="wastra") return '<div style="height:14px;margin:8px auto;width:160px;background:repeating-linear-gradient(90deg,var(--accent) 0 6px,transparent 6px 12px);opacity:.7"></div>';
+    if(t==="nokta") return '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0"><div style="height:1px;width:50px;background:var(--accent)"></div>'+icon("gem",12,"var(--accent)")+'<div style="height:1px;width:50px;background:var(--accent)"></div></div>';
+    if(t==="klasik") return '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0"><div style="height:1px;width:60px;background:var(--muted)"></div><span style="width:5px;height:5px;border-radius:99px;background:var(--text)"></span><div style="height:1px;width:60px;background:var(--muted)"></div></div>';
+    return '<div style="display:flex;justify-content:center;gap:6px;margin:8px 0"><span style="width:8px;height:8px;border-radius:99px;background:#ff5b7f"></span><span style="width:8px;height:8px;border-radius:99px;background:#ffd23f"></span><span style="width:8px;height:8px;border-radius:99px;background:#4ac6d2"></span></div>';
+  }
+  function confetti(){
+    const colors=["#ff5b7f","#ffd23f","#4ac6d2","#7b61ff","#5fd68a"]; let out='<div class="confetti">';
+    for(let i=0;i<26;i++){ const left=Math.random()*100,delay=Math.random()*5,dur=4+Math.random()*4,sz=6+Math.random()*6,rot=Math.random()*360,col=colors[i%5];
+      out+='<span style="left:'+left+'%;width:'+sz+'px;height:'+(sz*1.6)+'px;background:'+col+';transform:rotate('+rot+'deg);animation:fall '+dur+'s linear '+delay+'s infinite"></span>'; }
+    return out+'</div>';
+  }
+
+  /* ---------- State ---------- */
+  let state=null, themeKey="kirana", coverOpen=false, musicPlaying=false;
+  let ownerUid=null, invitationId=null, guestName="";
+
+  /* ---------- Build invitation ---------- */
+  function buildInvitation(){
+    const f=state.features||{}, v=THEMES[themeKey].vars;
+    const mapUrl="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(state.address||state.venue||"");
+    let html='<div class="inv" style="'+themeVars(v)+'">';
+    if(themeKey==="pesta") html+=confetti();
+    html+='<div class="s" style="padding-top:52px;padding-bottom:30px'+(themeKey==="nokta"?';border-bottom:1px solid color-mix(in srgb, var(--accent) 35%, transparent)':'')+'">';
+    html+='<div class="lab" style="color:var(--accent2)">Undangan '+esc(state.kind||"Acara")+'</div>';
+    html+='<h1 style="font-weight:'+(themeKey==="pesta"?"700":"500")+'">'+esc(state.title||"Judul")+'</h1>';
+    if(state.hosts) html+='<p class="hosts">'+esc(state.hosts)+'</p>';
+    html+=divider(themeKey);
+    if(state.date) html+='<div style="margin-top:6px"><p class="datebig">'+esc(fmtDate(state.date))+'</p><p class="datesm">'+esc(fmtTime(state.date))+'</p></div>';
+    html+='</div>';
+    if(state.message) html+='<div class="s" style="padding-top:6px"><p class="msg" style="font-style:'+(themeKey==="kirana"||themeKey==="senja"?"italic":"normal")+'">'+esc(state.message)+'</p></div>';
+    if(f.countdown && state.date){
+      html+='<div class="s"><div class="lab">Menuju Hari Bahagia</div><div class="cd">'
+        +'<div class="cell"><div class="num" id="cd-d">00</div><div class="u">Hari</div></div>'
+        +'<div class="cell"><div class="num" id="cd-h">00</div><div class="u">Jam</div></div>'
+        +'<div class="cell"><div class="num" id="cd-m">00</div><div class="u">Menit</div></div>'
+        +'<div class="cell"><div class="num" id="cd-s">00</div><div class="u">Detik</div></div></div></div>';
+    }
+    if(f.map && (state.venue||state.address)){
+      html+='<div class="s"><div class="lab">Lokasi</div>'+icon("mapPin",22,"var(--accent)");
+      if(state.venue) html+='<p class="venue">'+esc(state.venue)+'</p>';
+      if(state.address) html+='<p class="addr">'+esc(state.address)+'</p>';
+      html+='<a class="mapbtn" target="_blank" rel="noreferrer" href="'+esc(mapUrl)+'">'+icon("mapPin",14)+' Buka Peta</a></div>';
+    }
+    if(f.gallery && state.photos && state.photos.length){
+      html+='<div class="s"><div class="lab">Galeri</div><div class="grid">';
+      for(let i=0;i<state.photos.length;i++) html+='<div><img src="'+esc(state.photos[i])+'" alt="" onerror="this.style.opacity=.2"></div>';
+      html+='</div></div>';
+    }
+    if(f.rsvp){
+      html+='<div class="s"><div class="lab">Konfirmasi Kehadiran</div>'
+        +'<p class="addr" style="margin-bottom:14px">Mohon konfirmasi kehadiranmu ya.</p><div id="rsvp-box"></div></div>';
+    }
+    html+='<div class="s" style="padding-top:30px">'+icon("heart",16,"var(--accent)")
+      +'<p style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-top:8px">Merupakan suatu kehormatan atas kehadiran Anda</p></div>';
+    html+='</div>';
+    document.getElementById("screen").innerHTML=html;
+    renderRsvp(); tick();
+  }
+
+  /* ---------- Countdown ---------- */
+  function tick(){
+    if(!(state && state.features && state.features.countdown && state.date)) return;
+    const el=document.getElementById("cd-d"); if(!el) return;
+    const diff=Math.max(0,new Date(state.date).getTime()-Date.now());
+    const p=(n)=>String(n).padStart(2,"0");
+    el.textContent=p(Math.floor(diff/86400000));
+    document.getElementById("cd-h").textContent=p(Math.floor((diff%86400000)/3600000));
+    document.getElementById("cd-m").textContent=p(Math.floor((diff%3600000)/60000));
+    document.getElementById("cd-s").textContent=p(Math.floor((diff%60000)/1000));
+  }
+  setInterval(tick,1000);
+
+  /* ---------- RSVP -> Firestore ---------- */
+  const draft={ name:"", count:1, attend:"hadir", done:false };
+  function renderRsvp(){
+    const box=document.getElementById("rsvp-box"); if(!box) return;
+    if(draft.done){
+      box.innerHTML='<div class="thanks">'+icon("check",26,"var(--accent)")
+        +'<p style="font-family:var(--display);font-size:19px;margin:8px 0 2px;color:var(--text)">Terima kasih!</p>'
+        +'<p style="font-size:13px;color:var(--muted)">Konfirmasimu sudah terkirim.</p></div>';
+      return;
+    }
+    box.innerHTML='<div class="rsvp">'
+      +'<input id="rv-name" placeholder="Nama kamu" value="'+esc(draft.name||guestName)+'">'
+      +'<div class="att"><button data-att="hadir" class="'+(draft.attend==="hadir"?"sel":"")+'">Hadir</button>'
+      +'<button data-att="tidak" class="'+(draft.attend==="tidak"?"sel":"")+'">Tidak</button></div>'
+      +(draft.attend==="hadir"?'<input id="rv-count" type="number" min="1" max="20" value="'+esc(draft.count)+'" placeholder="Jumlah tamu">':'')
+      +'<button class="send" id="rv-send">Kirim Konfirmasi</button></div>';
+    const nm=document.getElementById("rv-name"); if(nm) nm.oninput=()=>{ draft.name=nm.value; };
+    const ct=document.getElementById("rv-count"); if(ct) ct.oninput=()=>{ draft.count=ct.value; };
+    box.querySelectorAll(".att button").forEach(b=>b.onclick=()=>{ draft.attend=b.getAttribute("data-att"); renderRsvp(); });
+    const send=document.getElementById("rv-send");
+    send.onclick=async ()=>{
+      const nameVal=(document.getElementById("rv-name").value||"").trim();
+      if(!nameVal) return;
+      send.disabled=true; send.textContent="Mengirim...";
+      try{
+        await addDoc(collection(db,"rsvp"),{
+          invitationId: invitationId,
+          ownerUid: ownerUid,
+          acara: state.title||"",
+          nama: nameVal,
+          kehadiran: draft.attend,
+          jumlah: Number(draft.count)||1,
+          waktu: serverTimestamp()
+        });
+        draft.done=true; renderRsvp();
+      }catch(e){ send.disabled=false; send.textContent="Coba lagi"; }
+    };
+  }
+
+  /* ---------- Cover ---------- */
+  function renderCover(){
+    const el=document.getElementById("cover");
+    if(!state.features || !state.features.cover){ el.style.display="none"; return; }
+    el.setAttribute("style", themeVars(THEMES[themeKey].vars));
+    el.style.display="flex";
+    const guest = guestName ? esc(guestName) : "Bapak/Ibu/Saudara/i";
+    el.innerHTML='<div class="clab">Undangan '+esc(state.kind||"Acara")+'</div>'
+      +'<h2>'+esc(state.title||"Judul")+'</h2>'
+      +(state.date?'<div class="cdate">'+esc(fmtDate(state.date))+'</div>':'')
+      +'<div class="cto">Kepada Yth.</div><div class="cname">'+guest+'</div>'
+      +'<button class="open-btn" id="open-btn">'+icon("mail",16)+' Buka Undangan</button>';
+    document.getElementById("open-btn").onclick=()=>{
+      coverOpen=true; el.classList.add("open");
+      setTimeout(()=>{ el.style.display="none"; },850);
+      if(state.features.music && state.musicUrl) startMusic();
+    };
+  }
+
+  /* ---------- Music ---------- */
+  function updateMusic(){
+    const btn=document.getElementById("music-btn"), audio=document.getElementById("bgm"), v=THEMES[themeKey].vars;
+    if(!state.features || !state.features.music || !state.musicUrl){ btn.style.display="none"; return; }
+    if(audio.getAttribute("src")!==state.musicUrl) audio.setAttribute("src", state.musicUrl);
+    btn.style.display="grid"; btn.style.background=v.accent;
+    btn.className="music-btn"+(musicPlaying?" spin":""); btn.innerHTML=icon("music",20,"#fff");
+    btn.onclick=()=>{ if(musicPlaying){ audio.pause(); musicPlaying=false; } else { startMusic(); } updateMusic(); };
+  }
+  function startMusic(){
+    const audio=document.getElementById("bgm");
+    if(!state.musicUrl) return;
+    if(audio.getAttribute("src")!==state.musicUrl) audio.setAttribute("src", state.musicUrl);
+    const p=audio.play();
+    if(p&&p.then) p.then(()=>{ musicPlaying=true; updateMusic(); }).catch(()=>{ musicPlaying=false; updateMusic(); });
+    else { musicPlaying=true; updateMusic(); }
+  }
+
+  /* ---------- Load ---------- */
+  function showState(msg){ document.getElementById("state-box").innerHTML='<div class="in">'+msg+'</div>'; }
+  function hideState(){ const b=document.getElementById("state-box"); if(b) b.remove(); }
+
+  (async ()=>{
+    const params=new URLSearchParams(location.search);
+    const id=params.get("id");
+    guestName=(params.get("to")||"").trim();
+    if(!id){ showState("Undangan tidak ditemukan.<br>Link tidak lengkap."); return; }
+    try{
+      const snap=await getDoc(doc(db,"undangan",id));
+      if(!snap.exists()){ showState("Undangan tidak ditemukan atau sudah dihapus."); return; }
+      const d=snap.data();
+      state=d.state||{}; themeKey=state.theme||"kirana"; ownerUid=d.ownerUid||null; invitationId=id;
+      document.title = (state.title? state.title+" — Undangan" : "Undangan");
+      buildInvitation(); renderCover(); updateMusic(); hideState();
+    }catch(e){
+      showState("Gagal memuat undangan.<br>"+(e.code||e.message||"")); 
+    }
+  })();
+</script>
+</body>
+</html>

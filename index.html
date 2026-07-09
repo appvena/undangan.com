@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Marcellus&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -372,7 +374,15 @@ var THEMES = {
   klasik:{ name:"Klasik", tag:"Minimalis · hitam-putih", icon:"star", swatch:["#fafafa","#1a1a1a","#8a8a8a"],
     vars:{bg:"#fbfbfa",bg2:"#f1f0ee",text:"#1a1a1a",muted:"#8a8a8a",accent:"#1a1a1a",accent2:"#9a9a9a",card:"#ffffff",radius:"2px",display:"'Playfair Display', Georgia, serif",body:"'Poppins', system-ui, sans-serif"} },
   wastra:{ name:"Wastra", tag:"Tradisional · batik", icon:"sparkles", swatch:["#f3e7d3","#8b2e2e","#b8860b"],
-    vars:{bg:"#f3e7d1",bg2:"#ecdcbe",text:"#4a2c1a",muted:"#9c7b56",accent:"#8b2e2e",accent2:"#b8860b",card:"#fbf5e8",radius:"3px",display:"'Playfair Display', Georgia, serif",body:"'Cormorant Garamond', Georgia, serif"} }
+    vars:{bg:"#f3e7d1",bg2:"#ecdcbe",text:"#4a2c1a",muted:"#9c7b56",accent:"#8b2e2e",accent2:"#b8860b",card:"#fbf5e8",radius:"3px",display:"'Playfair Display', Georgia, serif",body:"'Cormorant Garamond', Georgia, serif"} },
+  sakura:{ name:"Sakura", tag:"Lembut · bunga", icon:"heart", swatch:["#ffe9f0","#e88aa8","#c98aa0"],
+    vars:{bg:"#fff5f8",bg2:"#ffe6ef",text:"#5b3a4a",muted:"#b58aa0",accent:"#e2789b",accent2:"#c98aa0",card:"#fffafc",radius:"16px",display:"'Cormorant Garamond', Georgia, serif",body:"'Marcellus', Georgia, serif"} },
+  ocean:{ name:"Ocean", tag:"Segar · laut", icon:"sparkles", swatch:["#e2f0f7","#2b8fb3","#5bb0c9"],
+    vars:{bg:"#f0f8fb",bg2:"#e1eff6",text:"#1f3a4d",muted:"#6f93a5",accent:"#2b8fb3",accent2:"#5bb0c9",card:"#ffffff",radius:"10px",display:"'Playfair Display', Georgia, serif",body:"'Poppins', system-ui, sans-serif"} },
+  rustic:{ name:"Rustic", tag:"Hangat · earthy", icon:"leaf", swatch:["#e8dcc4","#a9764a","#7d9068"],
+    vars:{bg:"#f4ecdd",bg2:"#e8dcc4",text:"#4a3a28",muted:"#9c8a70",accent:"#a9764a",accent2:"#7d9068",card:"#fbf6ec",radius:"3px",display:"'Cormorant Garamond', Georgia, serif",body:"'Marcellus', Georgia, serif"} },
+  royal:{ name:"Royal", tag:"Mewah · ungu-emas", icon:"gem", swatch:["#1a1024","#d4af37","#b57edc"],
+    vars:{bg:"#1a1024",bg2:"#241436",text:"#f3ecff",muted:"#a892c0",accent:"#d4af37",accent2:"#b57edc",card:"#241633",radius:"6px",display:"'Playfair Display', Georgia, serif",body:"'Poppins', system-ui, sans-serif"} }
 };
 
 /* ---------- State ---------- */
@@ -382,7 +392,7 @@ var state = {
   date: future.toISOString().slice(0,16),
   venue:"Gedung Serbaguna Melati", address:"Jl. Merdeka No. 10, Jakarta Pusat",
   message:"Dengan penuh syukur, kami mengundang Bapak/Ibu/Saudara/i untuk hadir dan memberikan doa restu pada hari bahagia kami.",
-  guest:"", musicUrl:"", photos:[], theme:"kirana", slug:"", waGreeting:"netral",
+  guest:"", musicUrl:"", photos:[], theme:"kirana", slug:"", waGreeting:"netral", lat:null, lng:null,
   schedule:[], gifts:[],
   features:{ cover:true, countdown:true, rsvp:true, map:true, music:false, gallery:false, schedule:false, gift:false }
 };
@@ -397,9 +407,9 @@ function fmtTime(iso){ if(!iso) return ""; var d=new Date(iso); if(isNaN(d)) ret
 function themeVars(v){ return "--bg:"+v.bg+";--bg2:"+v.bg2+";--text:"+v.text+";--muted:"+v.muted+";--accent:"+v.accent+";--accent2:"+v.accent2+";--card:"+v.card+";--radius:"+v.radius+";--display:"+v.display+";--body:"+v.body+";"; }
 
 function divider(t){
-  if(t==="kirana"||t==="senja") return '<svg width="120" height="20" viewBox="0 0 120 20" style="margin:6px auto;display:block"><line x1="0" y1="10" x2="45" y2="10" stroke="var(--accent2)" stroke-width="1"/><line x1="75" y1="10" x2="120" y2="10" stroke="var(--accent2)" stroke-width="1"/><path d="M60 3 C 66 8, 66 12, 60 17 C 54 12, 54 8, 60 3 Z" fill="var(--accent)"/></svg>';
+  if(t==="kirana"||t==="senja"||t==="sakura"||t==="ocean"||t==="rustic") return '<svg width="120" height="20" viewBox="0 0 120 20" style="margin:6px auto;display:block"><line x1="0" y1="10" x2="45" y2="10" stroke="var(--accent2)" stroke-width="1"/><line x1="75" y1="10" x2="120" y2="10" stroke="var(--accent2)" stroke-width="1"/><path d="M60 3 C 66 8, 66 12, 60 17 C 54 12, 54 8, 60 3 Z" fill="var(--accent)"/></svg>';
   if(t==="wastra") return '<div style="height:14px;margin:8px auto;width:160px;background:repeating-linear-gradient(90deg,var(--accent) 0 6px,transparent 6px 12px);opacity:.7"></div>';
-  if(t==="nokta") return '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0"><div style="height:1px;width:50px;background:var(--accent)"></div>'+icon("gem",12,"var(--accent)")+'<div style="height:1px;width:50px;background:var(--accent)"></div></div>';
+  if(t==="nokta"||t==="royal") return '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0"><div style="height:1px;width:50px;background:var(--accent)"></div>'+icon("gem",12,"var(--accent)")+'<div style="height:1px;width:50px;background:var(--accent)"></div></div>';
   if(t==="klasik") return '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0"><div style="height:1px;width:60px;background:var(--muted)"></div><span style="width:5px;height:5px;border-radius:99px;background:var(--text)"></span><div style="height:1px;width:60px;background:var(--muted)"></div></div>';
   return '<div style="display:flex;justify-content:center;gap:6px;margin:8px 0"><span style="width:8px;height:8px;border-radius:99px;background:#ff5b7f"></span><span style="width:8px;height:8px;border-radius:99px;background:#ffd23f"></span><span style="width:8px;height:8px;border-radius:99px;background:#4ac6d2"></span></div>';
 }
@@ -416,7 +426,9 @@ function confetti(){
 function buildPreview(){
   var t=THEMES[state.theme], v=t.vars, f=state.features;
   var styleVars=themeVars(v);
-  var mapUrl="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(state.address||state.venue||"");
+  var mapUrl = (state.lat!=null && state.lng!=null)
+    ? ("https://www.google.com/maps/search/?api=1&query="+state.lat+","+state.lng)
+    : ("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(state.address||state.venue||""));
   var html='<div class="inv" style="'+styleVars+'">';
   if(state.theme==="pesta") html+=confetti();
 
@@ -443,7 +455,12 @@ function buildPreview(){
     html+='<div class="s"><div class="lab">Lokasi</div>'+icon("mapPin",22,"var(--accent)");
     if(state.venue) html+='<p class="venue">'+esc(state.venue)+'</p>';
     if(state.address) html+='<p class="addr">'+esc(state.address)+'</p>';
-    html+='<a class="mapbtn" target="_blank" rel="noreferrer" href="'+esc(mapUrl)+'">'+icon("mapPin",14)+' Buka Peta</a></div>';
+    html+='<a class="mapbtn" target="_blank" rel="noreferrer" href="'+esc(mapUrl)+'">'+icon("mapPin",14)+' Buka Peta</a>';
+    if(state.lat!=null && state.lng!=null){
+      var bb=(state.lng-0.006)+","+(state.lat-0.004)+","+(state.lng+0.006)+","+(state.lat+0.004);
+      html+='<div style="margin-top:12px"><iframe src="https://www.openstreetmap.org/export/embed.html?bbox='+bb+'&layer=mapnik&marker='+state.lat+','+state.lng+'" style="width:100%;max-width:340px;height:190px;border:0;border-radius:var(--radius)" loading="lazy"></iframe></div>';
+    }
+    html+='</div>';
   }
 
   if(f.gallery){
@@ -672,6 +689,8 @@ function buildEditor(){
     +'<label class="field"><span>Tanggal & waktu</span><input data-k="date" type="datetime-local" value="'+esc(state.date)+'"></label>'
     +'<label class="field"><span>Nama tempat</span><input data-k="venue" value="'+esc(state.venue)+'"></label>'
     +'<label class="field"><span>Alamat lengkap (untuk peta)</span><input data-k="address" value="'+esc(state.address)+'"></label>'
+    +'<button type="button" onclick="openMap()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:10px;border:1px dashed #12b3a6;background:#e4faf7;color:#0c8f83;font-weight:600;font-size:13px;cursor:pointer;margin:-4px 0 6px">'+icon("mapPin",15)+' Atur titik lokasi di peta</button>'
+    +'<div id="map-set" style="font-size:11px;color:#8a86a3;margin-bottom:14px">'+(state.lat!=null?"Titik lokasi sudah diatur \u2713":"Belum diatur \u2014 peta memakai pencarian alamat")+'</div>'
     +'<label class="field"><span>Pesan / kata sambutan</span><textarea data-k="message">'+esc(state.message)+'</textarea></label>'
     +'<label class="field"><span>Nama tamu di sampul (opsional)</span><input data-k="guest" value="'+esc(state.guest)+'" placeholder="Kosongkan untuk sapaan umum"></label>'
     +'<label class="field"><span>Nama link undangan (untuk dibagikan)</span><input data-k="slug" value="'+esc(state.slug)+'" placeholder="mis. andi-sinta (otomatis jika kosong)"></label>'
@@ -847,6 +866,40 @@ function initTabs(){
   }
 }
 
+/* ---------- Map picker (Leaflet/OSM) ---------- */
+var L_map=null, L_marker=null;
+function openMap(){
+  var modal=document.getElementById("mapModal"); modal.classList.remove("hidden");
+  var lat=(state.lat!=null)?state.lat:-2.5, lng=(state.lng!=null)?state.lng:118, zoom=(state.lat!=null)?16:4;
+  setTimeout(function(){
+    if(typeof L==="undefined"){ document.getElementById("map-status").textContent="Peta gagal dimuat (cek koneksi)."; return; }
+    if(!L_map){
+      L_map=L.map("map").setView([lat,lng],zoom);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(L_map);
+      L_marker=L.marker([lat,lng],{draggable:true}).addTo(L_map);
+      L_map.on("click",function(e){ L_marker.setLatLng(e.latlng); });
+    } else {
+      L_map.setView([lat,lng],zoom); L_marker.setLatLng([lat,lng]);
+    }
+    L_map.invalidateSize();
+  },250);
+}
+function mapSearch(){
+  var q=document.getElementById("map-q").value.trim(); if(!q) return;
+  var st=document.getElementById("map-status"); st.textContent="Mencari...";
+  fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q="+encodeURIComponent(q))
+    .then(function(r){ return r.json(); })
+    .then(function(a){ if(a && a.length){ var la=parseFloat(a[0].lat), ln=parseFloat(a[0].lon); L_map.setView([la,ln],16); L_marker.setLatLng([la,ln]); st.textContent=""; } else { st.textContent="Lokasi tidak ditemukan."; } })
+    .catch(function(){ st.textContent="Gagal mencari. Coba lagi."; });
+}
+function saveMapPoint(){
+  if(!L_marker) return;
+  var ll=L_marker.getLatLng(); state.lat=ll.lat; state.lng=ll.lng;
+  document.getElementById("mapModal").classList.add("hidden");
+  var ind=document.getElementById("map-set"); if(ind) ind.textContent="Titik lokasi sudah diatur \u2713";
+  renderPreview();
+}
+
 /* ---------- Init ---------- */
 (function(){
   try{ var to=new URLSearchParams(location.search).get("to"); if(to) state.guest=to; }catch(e){}
@@ -881,6 +934,20 @@ setInterval(tick, 1000);
   <div class="sheet">
     <h2>Undangan Saya <button class="x" id="lm-close">&times;</button></h2>
     <div id="lm-body"><div class="empty">Memuat…</div></div>
+  </div>
+</div>
+
+<div id="mapModal" class="modal hidden">
+  <div class="sheet" style="max-width:520px">
+    <h2>Atur Titik Lokasi <button class="x" onclick="document.getElementById('mapModal').classList.add('hidden')">&times;</button></h2>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <input id="map-q" placeholder="Cari nama tempat / alamat..." style="flex:1;padding:11px 12px;border-radius:9px;border:1px solid #e0d3ea;outline:none;font-size:14px">
+      <button onclick="mapSearch()" style="padding:0 16px;border-radius:9px;border:none;background:#2f6f6a;color:#fff;font-weight:600;cursor:pointer">Cari</button>
+    </div>
+    <div id="map" style="width:100%;height:300px;border-radius:12px;overflow:hidden;background:#eee"></div>
+    <div id="map-status" style="font-size:12px;color:#8a86a3;margin-top:8px;min-height:14px"></div>
+    <p style="font-size:12px;color:#8a86a3;margin:4px 0 0">Ketuk peta atau geser pin ke lokasi persis, lalu Simpan.</p>
+    <button onclick="saveMapPoint()" style="width:100%;padding:13px;border-radius:10px;border:none;background:#ff5b7f;color:#fff;font-weight:600;font-size:14px;margin-top:10px;cursor:pointer">Simpan Titik</button>
   </div>
 </div>
 
@@ -1014,10 +1081,18 @@ setInterval(tick, 1000);
     return new URL("u.html?id=" + currentDocId, location.href).href;
   }
 
+  async function shortenUrl(url){
+    try{
+      const r = await fetch("https://is.gd/create.php?format=simple&url=" + encodeURIComponent(url));
+      if(r.ok){ const t = (await r.text()).trim(); if(/^https?:\/\//.test(t)) return t; }
+    }catch(e){}
+    return url; // fallback: pakai link asli bila pemendek gagal
+  }
+
   // ---- Bagikan (link publik) ----
-  $("cb-share").onclick = () => {
+  $("cb-share").onclick = async () => {
     if(!currentDocId){ toast("Simpan dulu undangannya, lalu tekan Bagikan", true); return; }
-    const url = publicUrl();
+    const url = await shortenUrl(publicUrl());
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(url).then(() => toast("Link undangan disalin \u2713")).catch(() => window.prompt("Salin link undangan:", url));
     } else {
@@ -1026,12 +1101,13 @@ setInterval(tick, 1000);
   };
 
   // ---- Kirim via WhatsApp (per tamu) ----
-  $("cb-wa").onclick = () => {
+  $("cb-wa").onclick = async () => {
     if(!currentDocId){ toast("Simpan dulu undangannya", true); return; }
     const nama = (window.prompt("Nama tamu (opsional, untuk sapaan):", "") || "").trim();
     let url = publicUrl();
     if(nama) url += (url.indexOf("?")>=0?"&":"?") + "to=" + encodeURIComponent(nama);
-    const teks = buildWaText(nama, url);
+    const shortUrl = await shortenUrl(url);
+    const teks = buildWaText(nama, shortUrl);
     window.open("https://wa.me/?text=" + encodeURIComponent(teks), "_blank");
   };
 

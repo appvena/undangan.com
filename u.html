@@ -14,6 +14,27 @@
   @keyframes fall { to { transform:translateY(120vh) rotate(360deg); } }
   @keyframes pulse { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.05);} }
   @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes floatUp { 0% { transform:translateY(0) rotate(0deg); opacity:0; } 10% { opacity:.7; } 100% { transform:translateY(-115vh) rotate(360deg); opacity:0; } }
+  @keyframes petalFall { 0% { transform:translateY(-10vh) rotate(0deg); opacity:0; } 10% { opacity:.75; } 100% { transform:translateY(110vh) rotate(420deg); opacity:0; } }
+  @keyframes shimmer { 0%,100% { opacity:.35; transform:scale(1); } 50% { opacity:1; transform:scale(1.25); } }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(26px); } to { opacity:1; transform:none; } }
+
+  /* muncul saat digulir */
+  .reveal { opacity:0; transform:translateY(26px); transition:opacity .8s ease, transform .8s cubic-bezier(.2,.7,.3,1); }
+  .reveal.in { opacity:1; transform:none; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity:1 !important; transform:none !important; transition:none !important; }
+    .deco span { display:none !important; }
+  }
+
+  /* dekorasi melayang per tema */
+  .deco { position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
+  .deco span { position:absolute; display:block; }
+  .deco.fall span { top:-8vh; animation:petalFall linear infinite; }
+  .deco.rise span { bottom:-8vh; animation:floatUp linear infinite; }
+  .deco.stars span { border-radius:99px; animation:shimmer ease-in-out infinite; }
+
+  .cover .inner { animation:fadeUp .9s ease both; }
 
   #screen { min-height:100vh; position:relative; overflow-x:hidden; }
 
@@ -62,6 +83,7 @@
 </style>
 </head>
 <body>
+<div id="deco"></div>
 <div id="screen"></div>
 <button class="music-btn" id="music-btn"></button>
 <div class="cover" id="cover" style="display:none"></div>
@@ -203,7 +225,67 @@
       +'<p style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-top:8px">Merupakan suatu kehormatan atas kehadiran Anda</p></div>';
     html+='</div>';
     document.getElementById("screen").innerHTML=html;
-    renderRsvp(); tick();
+    renderRsvp(); tick(); buildDeco(); setupReveal();
+  }
+
+  /* ---------- Animasi: dekorasi per tema ---------- */
+  const DECO = {
+    kirana: {mode:"fall",  shape:"leaf",  colors:["#7a8b6f","#b08d57"]},
+    senja:  {mode:"rise",  shape:"heart", colors:["#e26d5c","#b5838d"]},
+    sakura: {mode:"fall",  shape:"petal", colors:["#e2789b","#f6b8cd"]},
+    ocean:  {mode:"rise",  shape:"dot",   colors:["#2b8fb3","#5bb0c9"]},
+    rustic: {mode:"fall",  shape:"leaf",  colors:["#a9764a","#7d9068"]},
+    royal:  {mode:"stars", shape:"dot",   colors:["#d4af37","#b57edc"]},
+    nokta:  {mode:"stars", shape:"dot",   colors:["#d4af37","#8f7bff"]},
+    klasik: {mode:"fall",  shape:"dot",   colors:["#c9c9c9","#9a9a9a"]},
+    wastra: {mode:"rise",  shape:"dot",   colors:["#8b2e2e","#b8860b"]},
+    pesta:  null  // pesta sudah punya confetti sendiri
+  };
+  function shapeHtml(shape, color, size){
+    if(shape==="heart") return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="'+color+'"><path d="M12 21s-8-5.2-8-10.4A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 8 3.6C20 15.8 12 21 12 21z"/></svg>';
+    if(shape==="petal") return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="'+color+'"><path d="M12 2c4 4 6 7 6 10a6 6 0 0 1-12 0c0-3 2-6 6-10z"/></svg>';
+    if(shape==="leaf") return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="'+color+'"><path d="M20 3C10 4 4 9 4 16c0 2 1 4 2 5 1-6 6-11 14-13-6 3-9 7-10 13 7 0 12-6 10-18z"/></svg>';
+    return '<span style="display:block;width:'+size+'px;height:'+size+'px;border-radius:99px;background:'+color+'"></span>';
+  }
+  function buildDeco(){
+    const cfg = DECO[themeKey];
+    const box = document.getElementById("deco");
+    if(!cfg){ box.innerHTML=""; box.className=""; return; }
+    box.className = "deco " + cfg.mode;
+    let out = "";
+    const n = cfg.mode==="stars" ? 30 : 18;
+    for(let i=0;i<n;i++){
+      const left = Math.random()*100;
+      const size = cfg.mode==="stars" ? (2+Math.random()*3) : (10+Math.random()*14);
+      const dur  = cfg.mode==="stars" ? (2+Math.random()*3) : (11+Math.random()*11);
+      const delay= Math.random()*(cfg.mode==="stars"?3:14);
+      const col  = cfg.colors[i % cfg.colors.length];
+      if(cfg.mode==="stars"){
+        const top = Math.random()*100;
+        out += '<span style="left:'+left+'%;top:'+top+'%;width:'+size+'px;height:'+size+'px;background:'+col+';animation-duration:'+dur+'s;animation-delay:'+delay+'s"></span>';
+      } else {
+        out += '<span style="left:'+left+'%;animation-duration:'+dur+'s;animation-delay:'+delay+'s">'+shapeHtml(cfg.shape,col,size)+'</span>';
+      }
+    }
+    box.innerHTML = out;
+  }
+
+  /* ---------- Animasi: muncul saat digulir ---------- */
+  let revealObs = null;
+  function setupReveal(){
+    const els = document.querySelectorAll("#screen .s");
+    if(!("IntersectionObserver" in window)){ els.forEach(e=>e.classList.add("in")); return; }
+    if(revealObs) revealObs.disconnect();
+    revealObs = new IntersectionObserver((entries)=>{
+      entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add("in"); revealObs.unobserve(en.target); } });
+    },{ threshold:0.12, rootMargin:"0px 0px -8% 0px" });
+    els.forEach((e,i)=>{
+      e.classList.add("reveal");
+      e.style.transitionDelay = Math.min(i*60,240)+"ms";
+      revealObs.observe(e);
+    });
+    // bagian pertama langsung tampil
+    if(els[0]) els[0].classList.add("in");
   }
 
   /* ---------- Countdown ---------- */
@@ -265,11 +347,11 @@
     el.setAttribute("style", themeVars(THEMES[themeKey].vars));
     el.style.display="flex";
     const guest = guestName ? esc(guestName) : "Bapak/Ibu/Saudara/i";
-    el.innerHTML='<div class="clab">Undangan '+esc(state.kind||"Acara")+'</div>'
+    el.innerHTML='<div class="inner"><div class="clab">Undangan '+esc(state.kind||"Acara")+'</div>'
       +'<h2>'+esc(state.title||"Judul")+'</h2>'
       +(state.date?'<div class="cdate">'+esc(fmtDate(state.date))+'</div>':'')
       +'<div class="cto">Kepada Yth.</div><div class="cname">'+guest+'</div>'
-      +'<button class="open-btn" id="open-btn">'+icon("mail",16)+' Buka Undangan</button>';
+      +'<button class="open-btn" id="open-btn">'+icon("mail",16)+' Buka Undangan</button></div>';
     document.getElementById("open-btn").onclick=()=>{
       coverOpen=true; el.classList.add("open");
       setTimeout(()=>{ el.style.display="none"; },850);

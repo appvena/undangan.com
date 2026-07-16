@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Marcellus&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Great+Vibes&family=Sacramento&family=Montserrat:wght@500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
@@ -24,7 +25,7 @@
 
   .topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid #22243c; background:#15162a; position:sticky; top:0; z-index:20; }
   .brand { display:flex; align-items:center; gap:10px; }
-  .logo { width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,#2f6f6a,#c9a24b); display:grid; place-items:center; color:#fff; }
+  .logo { width:34px; height:34px; border-radius:9px; background:#fff; display:grid; place-items:center; color:#fff; overflow:hidden; }
   .tabs { display:flex; gap:4px; background:#20223a; padding:4px; border-radius:10px; }
   .tabs button { display:flex; align-items:center; gap:5px; padding:7px 12px; border-radius:7px; border:none; cursor:pointer; font-size:12.5px; font-weight:600; background:transparent; color:#8b88a8; }
   .tabs button.active { background:#2f6f6a; color:#fff; }
@@ -131,7 +132,7 @@
   /* ---- Firebase UI ---- */
   #authOverlay { position:fixed; inset:0; z-index:200; background:#111225; display:grid; place-items:center; padding:24px; }
   #authOverlay .abox { width:100%; max-width:380px; background:#191b2e; border:1px solid #2b2d45; border-radius:20px; padding:28px 24px; }
-  #authOverlay .alogo { width:44px; height:44px; border-radius:12px; margin:0 auto 14px; background:linear-gradient(135deg,#2f6f6a,#c9a24b); display:grid; place-items:center; }
+  #authOverlay .alogo { width:64px; height:64px; border-radius:16px; margin:0 auto 14px; background:#fff; display:grid; place-items:center; overflow:hidden; box-shadow:0 8px 22px -10px rgba(0,0,0,.3); }
   #authOverlay h1 { font-size:19px; margin:0 0 4px; text-align:center; }
   #authOverlay .asub { font-size:12.5px; color:#8b88a8; text-align:center; margin-bottom:22px; }
   #authOverlay label { display:block; font-size:12px; font-weight:600; color:#c9c4dd; margin:0 0 6px; }
@@ -144,7 +145,7 @@
   #authMsg.err { display:block; background:#2a1416; border:1px solid #7a2f38; color:#ffb3ba; }
 
   #cloudbar { display:none; align-items:center; justify-content:space-between; gap:8px; padding:9px 14px; background:#191b2e; border-bottom:1px solid #22243c; flex-wrap:wrap; }
-  #cloudbar .grp { display:flex; gap:6px; align-items:center; }
+  #cloudbar .grp { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
   #cloudbar button { display:flex; align-items:center; gap:5px; padding:8px 12px; border-radius:9px; border:1px solid #2b2d45; background:#20223a; color:#c9c4dd; cursor:pointer; font-size:12.5px; font-weight:600; }
   #cloudbar button.save { background:#2f6f6a; color:#fff; border-color:#2f6f6a; }
   #cloudbar .who { font-size:11px; color:#8b88a8; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -221,7 +222,7 @@
 
   #authOverlay { background:linear-gradient(180deg,var(--app-bg1),var(--app-bg2)); }
   #authOverlay .abox { background:var(--panel); border:1px solid var(--line-2); box-shadow:0 24px 60px -24px rgba(124,107,245,.45); }
-  #authOverlay .alogo { background:linear-gradient(135deg,#ff5b7f,#7c6bf5)!important; }
+  #authOverlay .alogo { background:#fff!important; }
   #authOverlay h1 { color:var(--ink); }
   #authOverlay .asub { color:var(--ink-dim); }
   #authOverlay label { color:var(--ink); }
@@ -262,7 +263,7 @@
 </style>
 </head>
 <body class="view-edit">
-<div id="boot"><div class="bwrap"><div class="spinner"></div><div class="bt">Studio Undangan</div></div></div>
+<div id="boot"><div class="bwrap"><img src="logo.png" alt="" style="width:72px;height:72px;object-fit:contain;margin:0 auto 16px;display:block;border-radius:14px"><div class="spinner"></div><div class="bt">Studio Undangan</div></div></div>
 <div class="topbar">
   <div class="brand">
     <span class="logo" id="ic-logo"></span>
@@ -404,7 +405,7 @@ var state = {
   date: future.toISOString().slice(0,16),
   venue:"Gedung Serbaguna Melati", address:"Jl. Merdeka No. 10, Jakarta Pusat",
   message:"Dengan penuh syukur, kami mengundang Bapak/Ibu/Saudara/i untuk hadir dan memberikan doa restu pada hari bahagia kami.",
-  guest:"", musicUrl:"", photos:[], theme:"kirana", slug:"", waGreeting:"netral", lat:null, lng:null,
+  guest:"", musicUrl:"", photos:[], theme:"kirana", slug:"", waGreeting:"netral", lat:null, lng:null, font:"",
   schedule:[], gifts:[],
   features:{ cover:true, countdown:true, rsvp:true, map:true, music:false, gallery:false, schedule:false, gift:false }
 };
@@ -438,6 +439,7 @@ function confetti(){
 function buildPreview(){
   var t=THEMES[state.theme], v=t.vars, f=state.features;
   var styleVars=themeVars(v);
+  if(state.font) styleVars += "--display:"+state.font+";";
   var mapUrl = (state.lat!=null && state.lng!=null)
     ? ("https://www.google.com/maps/search/?api=1&query="+state.lat+","+state.lng)
     : ("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(state.address||state.venue||""));
@@ -527,7 +529,7 @@ function renderCover(){
   var el=document.getElementById("cover");
   var t=THEMES[state.theme], v=t.vars;
   if(!state.features.cover){ el.style.display="none"; return; }
-  el.setAttribute("style", themeVars(v));
+  el.setAttribute("style", themeVars(v) + (state.font ? "--display:"+state.font+";" : ""));
   el.className = "cover" + (coverOpen ? " open" : "");
   el.style.display = coverOpen ? "none" : "flex";
   if(coverOpen) return;
@@ -719,6 +721,16 @@ function buildEditor(){
     +'<label class="field"><span>Gaya salam pesan WhatsApp</span><select data-k="waGreeting" style="width:100%;padding:11px 12px;border-radius:10px;font-size:14px;border:1px solid var(--line-2,#33354f);background:#fff;color:var(--ink,#2b2540);outline:none;font-family:inherit"><option value="netral"'+(state.waGreeting==="islami"?"":" selected")+'>Netral & sopan</option><option value="islami"'+(state.waGreeting==="islami"?" selected":"")+'>Islami (Assalamu\'alaikum)</option></select></label>'
     +'<div class="sec-title"><span class="n">2</span>'+icon("palette",15,"#8b88a8")+'<span class="t">Pilih Desain</span></div>'
     +'<div class="themes">'+themeCards+'</div>'
+    +'<label class="field"><span>Font judul (opsional)</span><select data-k="font" style="width:100%;padding:11px 12px;border-radius:10px;font-size:14px;border:1px solid var(--line-2,#33354f);background:#fff;color:var(--ink,#2b2540);outline:none;font-family:inherit">'
+      +'<option value=""'+(state.font?"":" selected")+'>Ikuti tema (default)</option>'
+      +'<option value="\'Playfair Display\', serif"'+(state.font==="'Playfair Display', serif"?" selected":"")+'>Playfair — elegan</option>'
+      +'<option value="\'Cormorant Garamond\', serif"'+(state.font==="'Cormorant Garamond', serif"?" selected":"")+'>Cormorant — klasik</option>'
+      +'<option value="\'Great Vibes\', cursive"'+(state.font==="'Great Vibes', cursive"?" selected":"")+'>Great Vibes — kaligrafi</option>'
+      +'<option value="\'Dancing Script\', cursive"'+(state.font==="'Dancing Script', cursive"?" selected":"")+'>Dancing Script — tulisan tangan</option>'
+      +'<option value="\'Sacramento\', cursive"'+(state.font==="'Sacramento', cursive"?" selected":"")+'>Sacramento — script tipis</option>'
+      +'<option value="\'Montserrat\', sans-serif"'+(state.font==="'Montserrat', sans-serif"?" selected":"")+'>Montserrat — modern</option>'
+      +'<option value="\'Lora\', serif"'+(state.font==="'Lora', serif"?" selected":"")+'>Lora — serif lembut</option>'
+    +'</select></label>'
     +'<div class="sec-title"><span class="n">3</span>'+icon("sparkles",15,"#8b88a8")+'<span class="t">Fitur</span></div>'
     +tg("cover","mail","Sampul pembuka","Layar \'Buka Undangan\'")
     +tg("countdown","clock","Hitung mundur","Timer menuju hari-H")
@@ -878,7 +890,7 @@ function renderGalleryBox(){
 
 /* ---------- Tabs ---------- */
 function initTabs(){
-  document.getElementById("ic-logo").innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M12 16.4c-1.9-1.3-3.8-2.6-3.8-4.4 0-1.4 1.8-1.9 2.9-.8.35.35.6.8.9.8.3 0 .55-.45.9-.8 1.1-1.1 2.9-.6 2.9.8 0 1.8-1.9 3.1-3.8 4.4z" fill="#fff" stroke="none"/></svg>';
+  document.getElementById("ic-logo").innerHTML='<img src="logo.png" alt="Studio Undangan" style="width:100%;height:100%;object-fit:contain;padding:2px">';
   document.getElementById("tab-edit").innerHTML=icon("pencil",14)+" Edit";
   document.getElementById("tab-prev").innerHTML=icon("eye",14)+" Pratinjau";
   var btns=document.querySelectorAll(".tabs button");
@@ -939,7 +951,7 @@ setInterval(tick, 1000);
 <!-- ===== Login overlay ===== -->
 <div id="authOverlay" class="hidden">
   <div class="abox">
-    <div class="alogo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M12 16.4c-1.9-1.3-3.8-2.6-3.8-4.4 0-1.4 1.8-1.9 2.9-.8.35.35.6.8.9.8.3 0 .55-.45.9-.8 1.1-1.1 2.9-.6 2.9.8 0 1.8-1.9 3.1-3.8 4.4z" fill="#fff" stroke="none"/></svg></div>
+    <div class="alogo"><img src="logo.png" alt="Studio Undangan" style="width:100%;height:100%;object-fit:contain;padding:4px"></div>
     <h1>Studio Undangan</h1>
     <div class="asub">Daftar akun baru atau masuk untuk mulai</div>
     <label>Email</label>
@@ -1433,10 +1445,11 @@ setInterval(tick, 1000);
 
   // ---- Kelola Pengguna ----
   $("pk-users").onclick = openUsers;
-  $("um-close").onclick = () => $("userModal").classList.add("hidden");
-  $("userModal").onclick = (e) => { if(e.target === $("userModal")) $("userModal").classList.add("hidden"); };
+  $("um-close").onclick = () => { $("userModal").classList.add("hidden"); $("pkgModal").classList.remove("hidden"); };
+  $("userModal").onclick = (e) => { if(e.target === $("userModal")){ $("userModal").classList.add("hidden"); $("pkgModal").classList.remove("hidden"); } };
 
   async function openUsers(){
+    $("pkgModal").classList.add("hidden");
     $("userModal").classList.remove("hidden");
     const body = $("um-body");
     body.innerHTML = '<div class="empty">Memuat…</div>';

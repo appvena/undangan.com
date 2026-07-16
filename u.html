@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Marcellus&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Great+Vibes&family=Sacramento&family=Montserrat:wght@500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet" />
 <style>
   * { box-sizing:border-box; }
   html, body { margin:0; padding:0; }
@@ -164,7 +165,7 @@
     const mapUrl=(state.lat!=null && state.lng!=null)
       ? ("https://www.google.com/maps/search/?api=1&query="+state.lat+","+state.lng)
       : ("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(state.address||state.venue||""));
-    let html='<div class="inv" style="'+themeVars(v)+'">';
+    let html='<div class="inv" style="'+themeVars(v)+(state.font?"--display:"+state.font+";":"")+'">';
     if(themeKey==="pesta") html+=confetti();
     html+='<div class="s" style="padding-top:52px;padding-bottom:30px'+(themeKey==="nokta"?';border-bottom:1px solid color-mix(in srgb, var(--accent) 35%, transparent)':'')+'">';
     html+='<div class="lab" style="color:var(--accent2)">Undangan '+esc(state.kind||"Acara")+'</div>';
@@ -346,7 +347,7 @@
   function renderCover(){
     const el=document.getElementById("cover");
     if(!state.features || !state.features.cover){ el.style.display="none"; return; }
-    el.setAttribute("style", themeVars(THEMES[themeKey].vars));
+    el.setAttribute("style", themeVars(THEMES[themeKey].vars) + (state.font?"--display:"+state.font+";":""));
     el.style.display="flex";
     const guest = guestName ? esc(guestName) : "Bapak/Ibu/Saudara/i";
     el.innerHTML='<div class="inner"><div class="clab">Undangan '+esc(state.kind||"Acara")+'</div>'

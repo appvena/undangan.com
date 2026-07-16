@@ -11,7 +11,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
+  html, body { margin: 0; padding: 0; overflow-x: hidden; max-width: 100%; }
+  #app, #cloudbar, .topbar, .editor { max-width: 100vw; overflow-x: hidden; }
   body { font-family: 'Poppins', system-ui, sans-serif; background: #111225; color: #f0eeff; min-height: 100vh; }
   @keyframes fall { to { transform: translateY(720px) rotate(360deg); } }
   @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
@@ -261,7 +262,7 @@
 </style>
 </head>
 <body class="view-edit">
-<div id="boot"><div class="bwrap"><div class="spinner"></div><div class="bt">SRISP · memuat…</div></div></div>
+<div id="boot"><div class="bwrap"><div class="spinner"></div><div class="bt">Studio Undangan</div></div></div>
 <div class="topbar">
   <div class="brand">
     <span class="logo" id="ic-logo"></span>
@@ -877,7 +878,7 @@ function renderGalleryBox(){
 
 /* ---------- Tabs ---------- */
 function initTabs(){
-  document.getElementById("ic-logo").innerHTML=icon("sparkles",17,"#fff");
+  document.getElementById("ic-logo").innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M12 16.4c-1.9-1.3-3.8-2.6-3.8-4.4 0-1.4 1.8-1.9 2.9-.8.35.35.6.8.9.8.3 0 .55-.45.9-.8 1.1-1.1 2.9-.6 2.9.8 0 1.8-1.9 3.1-3.8 4.4z" fill="#fff" stroke="none"/></svg>';
   document.getElementById("tab-edit").innerHTML=icon("pencil",14)+" Edit";
   document.getElementById("tab-prev").innerHTML=icon("eye",14)+" Pratinjau";
   var btns=document.querySelectorAll(".tabs button");
@@ -938,7 +939,7 @@ setInterval(tick, 1000);
 <!-- ===== Login overlay ===== -->
 <div id="authOverlay" class="hidden">
   <div class="abox">
-    <div class="alogo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0Z"/></svg></div>
+    <div class="alogo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M12 16.4c-1.9-1.3-3.8-2.6-3.8-4.4 0-1.4 1.8-1.9 2.9-.8.35.35.6.8.9.8.3 0 .55-.45.9-.8 1.1-1.1 2.9-.6 2.9.8 0 1.8-1.9 3.1-3.8 4.4z" fill="#fff" stroke="none"/></svg></div>
     <h1>Studio Undangan</h1>
     <div class="asub">Daftar akun baru atau masuk untuk mulai</div>
     <label>Email</label>
@@ -1113,6 +1114,7 @@ setInterval(tick, 1000);
         }
       }
       // slug: pakai isian pengguna, atau ambil dari judul; pastikan unik
+      window.state.wm = (myPlan && myPlan.noWm) ? false : true;
       let base = slugify(window.state.slug || window.state.title);
       const finalSlug = await ensureUniqueSlug(base);
       window.state.slug = finalSlug;
@@ -1323,7 +1325,7 @@ setInterval(tick, 1000);
   let myPlan = { limit: Infinity, themes: null, feats: null, name: "" };
   window.myPlan = myPlan;
   async function loadMyPlan(user){
-    if(user.uid === ADMIN_UID){ myPlan = { limit: Infinity, themes: null, feats: null, name:"Admin" }; window.myPlan = myPlan; return; }
+    if(user.uid === ADMIN_UID){ myPlan = { limit: Infinity, themes: null, feats: null, noWm: true, name:"Admin" }; window.myPlan = myPlan; return; }
     let pkgName = "";
     try{
       const uref = doc(db, "users", user.uid);
@@ -1339,6 +1341,7 @@ setInterval(tick, 1000);
       limit: (pkg.limit && pkg.limit>0) ? pkg.limit : Infinity,
       themes: (Array.isArray(pkg.themes) && pkg.themes.length) ? pkg.themes : null,
       feats: (Array.isArray(pkg.feats) && pkg.feats.length) ? pkg.feats : null,
+      noWm: pkg.noWm === true,
       name: pkg.nama || ""
     };
     window.myPlan = myPlan;
@@ -1356,8 +1359,8 @@ setInterval(tick, 1000);
       const snap = await getDoc(doc(db, "settings", "paket"));
       const data = snap.exists() ? snap.data() : {};
       pkgs = Array.isArray(data.list) ? data.list : [
-        { nama:"Gratis",  harga:"Rp0",      fitur:"1 undangan, 3 tema dasar", limit:1, themes:["kirana","senja","pesta"], feats:["cover","countdown","rsvp","map"] },
-        { nama:"Premium", harga:"Rp50.000", fitur:"Semua tema, musik, galeri, RSVP", limit:0, themes:[], feats:[] }
+        { nama:"Gratis",  harga:"Rp0",      fitur:"1 undangan, 3 tema dasar", limit:1, themes:["kirana","senja","pesta"], feats:["cover","countdown","rsvp","map"], noWm:false },
+        { nama:"Premium", harga:"Rp50.000", fitur:"Semua tema, musik, galeri, RSVP, tanpa watermark", limit:0, themes:[], feats:[], noWm:true }
       ];
       const pay = data.pay || {};
       $("pay-bank").value = pay.bank || "";
@@ -1410,6 +1413,12 @@ setInterval(tick, 1000);
       };
       box.appendChild(chipRow("Tema yang boleh", ALL_THEMES, THEME_LABEL, "themes"));
       box.appendChild(chipRow("Fitur yang boleh", ALL_FEATS, FEAT_LABEL, "feats"));
+
+      const wmBtn = document.createElement("button");
+      wmBtn.textContent = (p.noWm ? "\u2611" : "\u2610") + " Tanpa watermark (paket berbayar)";
+      wmBtn.style.cssText = "display:block;width:100%;text-align:left;margin:4px 0 8px;padding:9px 12px;border-radius:9px;font-size:12.5px;cursor:pointer;border:1px solid " + (p.noWm?"#12b3a6":"#e6d3de") + ";background:" + (p.noWm?"#e4faf7":"#fff") + ";color:" + (p.noWm?"#0c8f83":"#8a7f90");
+      wmBtn.onclick = () => { pkgs[i].noWm = !pkgs[i].noWm; renderPkg(); };
+      box.appendChild(wmBtn);
 
       const del = document.createElement("button");
       del.textContent = "Hapus paket";

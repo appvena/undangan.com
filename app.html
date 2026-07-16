@@ -256,6 +256,8 @@
   #boot .bwrap { text-align:center; }
   .spinner { width:46px; height:46px; border-radius:50%; border:4px solid #eadff7; border-top-color:#ff5b7f; animation:spin .8s linear infinite; margin:0 auto 14px; }
   #boot .bt { font-weight:600; color:#7c6bf5; font-size:14px; letter-spacing:.5px; }
+  .theme-card.locked, .toggle.locked { opacity:.55; }
+  .toggle.locked .sw { filter:grayscale(1); }
 </style>
 </head>
 <body class="view-edit">
@@ -675,20 +677,30 @@ function renderPreview(){
 }
 
 /* ---------- Editor ---------- */
+function themeAllowed(key){ var p=window.myPlan; if(!p||!p.themes) return true; return p.themes.indexOf(key)>=0; }
+function featAllowed(key){ var p=window.myPlan; if(!p||!p.feats) return true; return p.feats.indexOf(key)>=0; }
+
 function buildEditor(){
   var e=document.getElementById("editor");
+  // paksa sesuai paket: matikan fitur terkunci, ganti tema terkunci
+  if(window.myPlan && window.myPlan.feats){
+    for(var fk in state.features){ if(window.myPlan.feats.indexOf(fk)<0) state.features[fk]=false; }
+  }
+  if(window.myPlan && window.myPlan.themes && window.myPlan.themes.indexOf(state.theme)<0){
+    state.theme = window.myPlan.themes[0] || state.theme;
+  }
   var themeCards="";
   for(var key in THEMES){
-    var t=THEMES[key], active=(key===state.theme);
-    themeCards+='<button class="theme-card'+(active?" active":"")+'" data-theme="'+key+'">'
+    var t=THEMES[key], active=(key===state.theme), lockedT=!themeAllowed(key);
+    themeCards+='<button class="theme-card'+(active?" active":"")+(lockedT?" locked":"")+'" data-theme="'+key+'"'+(lockedT?' data-locked="1"':'')+'>'
       +'<div class="sw"><span style="background:'+t.swatch[0]+'"></span><span style="background:'+t.swatch[1]+'"></span><span style="background:'+t.swatch[2]+'"></span></div>'
-      +'<div class="nm">'+icon(t.icon,14,active?"#c9a24b":"#8b88a8")+'<span>'+t.name+'</span></div>'
+      +'<div class="nm">'+icon(t.icon,14,active?"#c9a24b":"#8b88a8")+'<span>'+t.name+(lockedT?' \uD83D\uDD12':'')+'</span></div>'
       +'<div class="tg">'+t.tag+'</div></button>';
   }
   function tg(k,ic,lbl,desc){
-    var on=state.features[k];
-    return '<button class="toggle'+(on?" on":"")+'" data-feat="'+k+'"><span class="ic">'+icon(ic,17)+'</span>'
-      +'<span class="lbl"><b>'+lbl+'</b><small>'+desc+'</small></span><span class="sw"><i></i></span></button>';
+    var on=state.features[k], lockedF=!featAllowed(k);
+    return '<button class="toggle'+(on?" on":"")+(lockedF?" locked":"")+'" data-feat="'+k+'"'+(lockedF?' data-locked="1"':'')+'><span class="ic">'+icon(ic,17)+'</span>'
+      +'<span class="lbl"><b>'+lbl+(lockedF?' \uD83D\uDD12':'')+'</b><small>'+(lockedF?'Tersedia di paket lebih tinggi':desc)+'</small></span><span class="sw"><i></i></span></button>';
   }
   e.innerHTML=
     '<div class="sec-title"><span class="n">1</span>'+icon("pencil",15,"#8b88a8")+'<span class="t">Detail Acara</span></div>'
@@ -730,11 +742,15 @@ function buildEditor(){
   }
   var cards=e.querySelectorAll("[data-theme]");
   for(var j=0;j<cards.length;j++){
-    cards[j].addEventListener("click", function(){ state.theme=this.getAttribute("data-theme"); buildEditor(); renderPreview(); });
+    cards[j].addEventListener("click", function(){
+      if(this.getAttribute("data-locked")){ toast("Tema ini untuk paket lebih tinggi. Upgrade paketmu ya.", true); return; }
+      state.theme=this.getAttribute("data-theme"); buildEditor(); renderPreview();
+    });
   }
   var togs=e.querySelectorAll("[data-feat]");
   for(var k=0;k<togs.length;k++){
     togs[k].addEventListener("click", function(){
+      if(this.getAttribute("data-locked")){ toast("Fitur ini untuk paket lebih tinggi. Upgrade paketmu ya.", true); return; }
       var key=this.getAttribute("data-feat");
       state.features[key]=!state.features[key];
       if(key==="cover" && state.features.cover) coverOpen=false;
@@ -960,6 +976,14 @@ setInterval(tick, 1000);
   </div>
 </div>
 
+<div id="userModal" class="modal hidden">
+  <div class="sheet" style="max-width:520px">
+    <h2>Kelola Pengguna <button class="x" id="um-close">&times;</button></h2>
+    <p style="font-size:12px;color:#8a86a3;margin:0 0 12px">Setelah pengguna konfirmasi transfer, ubah paketnya di sini. Perubahan langsung berlaku.</p>
+    <div id="um-body"><div class="empty">Memuat…</div></div>
+  </div>
+</div>
+
 <div id="pkgModal" class="modal hidden">
   <div class="sheet" style="max-width:520px">
     <h2>Pengaturan Paket <button class="x" id="pk-close">&times;</button></h2>
@@ -988,7 +1012,8 @@ setInterval(tick, 1000);
       </div>
     </div>
 
-    <button id="pk-save" style="width:100%;padding:13px;border-radius:10px;border:none;background:#ff5b7f;color:#fff;font-weight:600;font-size:14px;margin-top:14px;cursor:pointer">Simpan Semua Pengaturan</button>
+    <button id="pk-users" style="width:100%;padding:12px;border-radius:10px;border:1px solid #7c6bf5;background:#f3f0ff;color:#7c6bf5;font-weight:600;cursor:pointer;margin-top:14px">Kelola Pengguna & Paketnya</button>
+    <button id="pk-save" style="width:100%;padding:13px;border-radius:10px;border:none;background:#ff5b7f;color:#fff;font-weight:600;font-size:14px;margin-top:8px;cursor:pointer">Simpan Semua Pengaturan</button>
   </div>
 </div>
 
@@ -1079,6 +1104,14 @@ setInterval(tick, 1000);
     if(!auth.currentUser) return;
     const btn = $("cb-save"); btn.disabled = true;
     try {
+      // batas jumlah undangan sesuai paket (hanya saat membuat baru)
+      if(!currentDocId && myPlan && isFinite(myPlan.limit)){
+        const mine = await getDocs(query(collection(db,"undangan"), where("ownerUid","==",auth.currentUser.uid)));
+        if(mine.size >= myPlan.limit){
+          toast("Paketmu maksimal " + myPlan.limit + " undangan. Upgrade untuk menambah.", true);
+          btn.disabled = false; return;
+        }
+      }
       // slug: pakai isian pengguna, atau ambil dari judul; pastikan unik
       let base = slugify(window.state.slug || window.state.title);
       const finalSlug = await ensureUniqueSlug(base);
@@ -1282,6 +1315,35 @@ setInterval(tick, 1000);
   const ADMIN_UID = "AYYpQCTjbsM7pWMWeDsIGoVbEm12";
   let pkgs = [];
 
+  const ALL_THEMES = ["kirana","senja","pesta","nokta","klasik","wastra","sakura","ocean","rustic","royal"];
+  const THEME_LABEL = {kirana:"Kirana",senja:"Senja",pesta:"Pesta",nokta:"Nokta",klasik:"Klasik",wastra:"Wastra",sakura:"Sakura",ocean:"Ocean",rustic:"Rustic",royal:"Royal"};
+  const ALL_FEATS = ["cover","countdown","rsvp","map","schedule","gift","music","gallery"];
+  const FEAT_LABEL = {cover:"Sampul",countdown:"Countdown",rsvp:"RSVP",map:"Peta",schedule:"Susunan",gift:"Amplop",music:"Musik",gallery:"Galeri"};
+
+  let myPlan = { limit: Infinity, themes: null, feats: null, name: "" };
+  window.myPlan = myPlan;
+  async function loadMyPlan(user){
+    if(user.uid === ADMIN_UID){ myPlan = { limit: Infinity, themes: null, feats: null, name:"Admin" }; window.myPlan = myPlan; return; }
+    let pkgName = "";
+    try{
+      const uref = doc(db, "users", user.uid);
+      const usnap = await getDoc(uref);
+      if(!usnap.exists()){ try{ await setDoc(uref, { email:user.email||"", package:"" }); }catch(e){} }
+      else pkgName = usnap.data().package || "";
+    }catch(e){}
+    let list = [];
+    try{ const ps = await getDoc(doc(db,"settings","paket")); if(ps.exists() && Array.isArray(ps.data().list)) list = ps.data().list; }catch(e){}
+    const pkg = list.find(p => p.nama === pkgName) || list[0] || null;
+    if(!pkg){ myPlan = { limit: Infinity, themes: null, feats: null, name:"" }; }
+    else myPlan = {
+      limit: (pkg.limit && pkg.limit>0) ? pkg.limit : Infinity,
+      themes: (Array.isArray(pkg.themes) && pkg.themes.length) ? pkg.themes : null,
+      feats: (Array.isArray(pkg.feats) && pkg.feats.length) ? pkg.feats : null,
+      name: pkg.nama || ""
+    };
+    window.myPlan = myPlan;
+  }
+
   $("cb-admin").onclick = openPkg;
   $("pk-close").onclick = () => $("pkgModal").classList.add("hidden");
   $("pkgModal").onclick = (e) => { if(e.target === $("pkgModal")) $("pkgModal").classList.add("hidden"); };
@@ -1294,8 +1356,8 @@ setInterval(tick, 1000);
       const snap = await getDoc(doc(db, "settings", "paket"));
       const data = snap.exists() ? snap.data() : {};
       pkgs = Array.isArray(data.list) ? data.list : [
-        { nama:"Gratis",  harga:"Rp0",      fitur:"1 undangan, 3 tema dasar" },
-        { nama:"Premium", harga:"Rp50.000", fitur:"Semua tema, musik, galeri, RSVP" }
+        { nama:"Gratis",  harga:"Rp0",      fitur:"1 undangan, 3 tema dasar", limit:1, themes:["kirana","senja","pesta"], feats:["cover","countdown","rsvp","map"] },
+        { nama:"Premium", harga:"Rp50.000", fitur:"Semua tema, musik, galeri, RSVP", limit:0, themes:[], feats:[] }
       ];
       const pay = data.pay || {};
       $("pay-bank").value = pay.bank || "";
@@ -1311,28 +1373,90 @@ setInterval(tick, 1000);
     if(!pkgs.length){ body.innerHTML = '<div class="empty">Belum ada paket. Tekan "Tambah Paket".</div>'; return; }
     body.innerHTML = "";
     pkgs.forEach((p, i) => {
+      if(!Array.isArray(p.themes)) p.themes = [];
+      if(!Array.isArray(p.feats)) p.feats = [];
       const box = document.createElement("div");
-      box.style.cssText = "background:#fff2f7;border:1px solid #ffd9e6;border-radius:12px;padding:12px;margin-bottom:8px";
-      const inp = (val, ph, key) => {
+      box.style.cssText = "background:#fff2f7;border:1px solid #ffd9e6;border-radius:12px;padding:12px;margin-bottom:10px";
+      const inp = (val, ph, key, type) => {
         const el = document.createElement("input");
-        el.value = val || ""; el.placeholder = ph;
+        el.value = val || ""; el.placeholder = ph; if(type) el.type = type;
         el.style.cssText = "width:100%;padding:10px 12px;border-radius:9px;border:1px solid #f1e4ec;background:#fff;color:#2b2540;outline:none;font-size:14px;margin-bottom:6px;font-family:inherit";
-        el.oninput = () => { pkgs[i][key] = el.value; };
+        el.oninput = () => { pkgs[i][key] = (type==="number") ? (parseInt(el.value)||0) : el.value; };
         return el;
       };
       box.appendChild(inp(p.nama, "Nama paket (mis. Premium)", "nama"));
       box.appendChild(inp(p.harga, "Harga (mis. Rp50.000)", "harga"));
-      box.appendChild(inp(p.fitur, "Fitur, pisahkan dengan koma", "fitur"));
+      box.appendChild(inp(p.fitur, "Ringkasan fitur (tampil di beranda), pisah koma", "fitur"));
+      box.appendChild(inp(p.limit, "Batas undangan (0 = tak terbatas)", "limit", "number"));
+
+      const chipRow = (title, all, labels, arrKey) => {
+        const wrap = document.createElement("div"); wrap.style.cssText = "margin:8px 0";
+        const h = document.createElement("div"); h.textContent = title + " (kosong = semua boleh)";
+        h.style.cssText = "font-size:11px;color:#8a86a3;margin-bottom:5px"; wrap.appendChild(h);
+        const row = document.createElement("div"); row.style.cssText = "display:flex;flex-wrap:wrap;gap:5px";
+        all.forEach(key => {
+          const on = pkgs[i][arrKey].indexOf(key) >= 0;
+          const b = document.createElement("button");
+          b.textContent = labels[key];
+          b.style.cssText = "padding:5px 10px;border-radius:99px;font-size:11.5px;cursor:pointer;border:1px solid " + (on?"#ff5b7f":"#e6d3de") + ";background:" + (on?"#ff5b7f":"#fff") + ";color:" + (on?"#fff":"#8a7f90");
+          b.onclick = () => {
+            const idx = pkgs[i][arrKey].indexOf(key);
+            if(idx>=0) pkgs[i][arrKey].splice(idx,1); else pkgs[i][arrKey].push(key);
+            renderPkg();
+          };
+          row.appendChild(b);
+        });
+        wrap.appendChild(row); return wrap;
+      };
+      box.appendChild(chipRow("Tema yang boleh", ALL_THEMES, THEME_LABEL, "themes"));
+      box.appendChild(chipRow("Fitur yang boleh", ALL_FEATS, FEAT_LABEL, "feats"));
+
       const del = document.createElement("button");
       del.textContent = "Hapus paket";
-      del.style.cssText = "padding:7px 12px;border-radius:8px;border:none;background:#fdeaec;color:#b23a48;font-weight:600;font-size:12px;cursor:pointer";
+      del.style.cssText = "padding:7px 12px;border-radius:8px;border:none;background:#fdeaec;color:#b23a48;font-weight:600;font-size:12px;cursor:pointer;margin-top:4px";
       del.onclick = () => { pkgs.splice(i,1); renderPkg(); };
       box.appendChild(del);
       body.appendChild(box);
     });
   }
 
-  $("pk-add").onclick = () => { pkgs.push({ nama:"", harga:"", fitur:"" }); renderPkg(); };
+  $("pk-add").onclick = () => { pkgs.push({ nama:"", harga:"", fitur:"", limit:0, themes:[], feats:[] }); renderPkg(); };
+
+  // ---- Kelola Pengguna ----
+  $("pk-users").onclick = openUsers;
+  $("um-close").onclick = () => $("userModal").classList.add("hidden");
+  $("userModal").onclick = (e) => { if(e.target === $("userModal")) $("userModal").classList.add("hidden"); };
+
+  async function openUsers(){
+    $("userModal").classList.remove("hidden");
+    const body = $("um-body");
+    body.innerHTML = '<div class="empty">Memuat…</div>';
+    try{
+      let names = pkgs.map(p => p.nama).filter(Boolean);
+      if(!names.length){ const ps = await getDoc(doc(db,"settings","paket")); if(ps.exists() && Array.isArray(ps.data().list)) names = ps.data().list.map(p=>p.nama).filter(Boolean); }
+      const snap = await getDocs(collection(db, "users"));
+      if(snap.empty){ body.innerHTML = '<div class="empty">Belum ada pengguna terdaftar.</div>'; return; }
+      body.innerHTML = "";
+      snap.forEach(d => {
+        const u = d.data(), uid = d.id;
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid #f1e4ec;border-radius:10px;margin-bottom:7px";
+        const info = document.createElement("div"); info.style.cssText = "font-size:13px;overflow:hidden;flex:1";
+        const email = u.email || uid;
+        info.innerHTML = '<div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div><div style="font-size:11px;color:#8a86a3">Paket: ' + (u.package || "default/gratis") + '</div>';
+        info.firstChild.textContent = email;
+        const sel = document.createElement("select");
+        sel.style.cssText = "padding:8px;border-radius:8px;border:1px solid #e0d3ea;font-size:13px;max-width:130px";
+        sel.innerHTML = '<option value="">default</option>' + names.map(n => '<option value="'+n+'"'+(u.package===n?' selected':'')+'>'+n+'</option>').join("");
+        sel.onchange = async () => {
+          try{ await setDoc(doc(db,"users",uid), { email: u.email||"", package: sel.value }, { merge:true }); toast("Paket diperbarui \u2713"); }
+          catch(e){ toast("Gagal: " + (e.code||e.message), true); }
+        };
+        row.appendChild(info); row.appendChild(sel);
+        body.appendChild(row);
+      });
+    }catch(e){ body.innerHTML = '<div class="empty">Gagal memuat: '+(e.code||e.message)+'</div>'; }
+  }
 
   // ---- Ubah password admin ----
   $("adm-pass-btn").onclick = async () => {
@@ -1390,15 +1514,19 @@ setInterval(tick, 1000);
     const b = $("boot"); if(!b) return;
     b.classList.add("done"); setTimeout(() => { if(b) b.style.display = "none"; }, 550);
   }
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if(user){
       $("authOverlay").classList.add("hidden");
       $("cloudbar").style.display = "flex";
       $("cb-email").textContent = user.email;
       $("cb-admin").style.display = (user.uid === ADMIN_UID) ? "flex" : "none";
+      await loadMyPlan(user);
+      if(window.buildEditor) window.buildEditor();
+      if(window.renderPreview) window.renderPreview();
       resetIdle();
     } else {
       currentDocId = null;
+      myPlan = { limit: Infinity, themes: null, feats: null, name:"" }; window.myPlan = myPlan;
       $("authOverlay").classList.remove("hidden");
       $("cloudbar").style.display = "none";
       $("au-pass").value = "";

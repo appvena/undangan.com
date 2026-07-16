@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Studio Undangan — Pembuat Undangan Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Marcellus&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Poppins', system-ui, sans-serif; background: #111225; color: #f0eeff; min-height: 100vh; }
+  @keyframes fall { to { transform: translateY(720px) rotate(360deg); } }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #33354f; border-radius: 99px; }
+  input:focus, textarea:focus { border-color: #2f6f6a !important; }
+  button { font-family: inherit; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid #22243c; background:#15162a; position:sticky; top:0; z-index:20; }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .logo { width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,#2f6f6a,#c9a24b); display:grid; place-items:center; color:#fff; }
+  .tabs { display:flex; gap:4px; background:#20223a; padding:4px; border-radius:10px; }
+  .tabs button { display:flex; align-items:center; gap:5px; padding:7px 12px; border-radius:7px; border:none; cursor:pointer; font-size:12.5px; font-weight:600; background:transparent; color:#8b88a8; }
+  .tabs button.active { background:#2f6f6a; color:#fff; }
+
+  .editor { padding:20px 22px 60px; }
+  .field { display:block; margin-bottom:14px; }
+  .field > span { display:block; font-size:12px; font-weight:600; color:#c9c4dd; margin-bottom:6px; }
+  .field input, .field textarea { width:100%; padding:10px 12px; border-radius:10px; font-size:14px; border:1px solid #33354f; background:#20223a; color:#f0eeff; outline:none; font-family:inherit; }
+  .field textarea { min-height:80px; resize:vertical; }
+
+  .sec-title { display:flex; align-items:center; gap:8px; margin:14px 0 14px; }
+  .sec-title .n { font-size:11px; font-weight:700; color:#c9a24b; width:20px; height:20px; border-radius:6px; background:#2a2410; display:grid; place-items:center; }
+  .sec-title .t { font-size:13px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:#c9c4dd; }
+
+  .themes { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+  .theme-card { padding:12px; border-radius:14px; cursor:pointer; text-align:left; border:2px solid #2b2d45; background:#20223a; }
+  .theme-card.active { border-color:#c9a24b; background:#26283f; }
+  .theme-card .sw { display:flex; gap:4px; margin-bottom:8px; }
+  .theme-card .sw span { width:16px; height:16px; border-radius:5px; border:1px solid rgba(255,255,255,.1); }
+  .theme-card .nm { display:flex; align-items:center; gap:6px; font-size:13.5px; font-weight:600; color:#f0eeff; }
+  .theme-card .tg { font-size:11px; color:#8b88a8; margin-top:2px; }
+
+  .toggle { display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:12px 14px; border-radius:12px; cursor:pointer; margin-bottom:8px; border:1px solid #2b2d45; background:#20223a; }
+  .toggle.on { border-color:#2f6f6a; background:#1c3330; }
+  .toggle .ic { width:34px; height:34px; border-radius:9px; display:grid; place-items:center; flex-shrink:0; background:#2b2d45; color:#8b88a8; }
+  .toggle.on .ic { background:#2f6f6a; color:#eafffb; }
+  .toggle .lbl { flex:1; }
+  .toggle .lbl b { display:block; font-size:13.5px; font-weight:600; color:#f0eeff; }
+  .toggle .lbl small { display:block; font-size:11.5px; color:#8b88a8; }
+  .toggle .sw { width:40px; height:23px; border-radius:99px; flex-shrink:0; position:relative; background:#3a3c58; }
+  .toggle.on .sw { background:#2f6f6a; }
+  .toggle .sw i { position:absolute; top:2px; left:2px; width:19px; height:19px; border-radius:99px; background:#fff; transition:left .2s; }
+  .toggle.on .sw i { left:19px; }
+
+  .subbox { margin-top:10px; padding:12px; border-radius:12px; background:#20223a; border:1px solid #2b2d45; }
+  .subbox .row { display:flex; gap:8px; }
+  .subbox input { flex:1; padding:10px 12px; border-radius:10px; font-size:14px; border:1px solid #33354f; background:#191b2e; color:#f0eeff; outline:none; }
+  .subbox .add { padding:0 14px; border-radius:10px; border:none; background:#2f6f6a; color:#fff; cursor:pointer; }
+  .subbox small { display:block; font-size:11px; color:#8b88a8; margin-top:8px; line-height:1.5; }
+  .subbox .upl { display:flex; align-items:center; justify-content:center; gap:6px; width:100%; padding:12px; border-radius:10px; border:1px dashed #3a6f6a; background:#1c3330; color:#8fe5db; cursor:pointer; font-size:13px; font-weight:600; margin-bottom:4px; }
+  .subbox .or { text-align:center; font-size:11px; color:#8b88a8; margin:8px 0; }
+  .subbox .ustat { font-size:11.5px; color:#c9a24b; margin-top:8px; min-height:14px; }
+  .galtags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .galtags span { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:#c9c4dd; background:#2b2d45; padding:4px 8px; border-radius:8px; }
+  .galtags span i { cursor:pointer; display:inline-flex; }
+
+  .stage { display:grid; place-items:center; padding:26px 12px 50px; background:radial-gradient(circle at 50% 0%, #1c1e38, #111225); }
+  .phone { width:340px; max-width:100%; height:680px; border-radius:40px; background:#0b0c15; padding:10px; box-shadow:0 30px 60px -20px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06); position:relative; }
+  .phone .notch { position:absolute; top:20px; left:50%; transform:translateX(-50%); width:110px; height:26px; background:#0b0c15; border-radius:99px; z-index:5; }
+  .phone .screen { width:100%; height:100%; border-radius:30px; overflow:hidden; position:relative; }
+  .phone .scroll { height:100%; overflow-y:auto; }
+
+  .inv { font-family:var(--body); color:var(--text); background:linear-gradient(160deg,var(--bg),var(--bg2)); min-height:100%; position:relative; padding:0 0 40px; }
+  .inv .s { padding:22px 24px; text-align:center; position:relative; z-index:1; }
+  .inv .lab { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .inv h1 { font-family:var(--display); font-size:40px; line-height:1.1; margin:6px 0 4px; color:var(--text); }
+  .inv .hosts { font-size:15px; color:var(--muted); margin-top:6px; }
+  .inv .datebig { font-family:var(--display); font-size:18px; color:var(--accent); }
+  .inv .datesm { font-size:13px; color:var(--muted); margin-top:2px; }
+  .inv .msg { font-size:15px; line-height:1.7; color:var(--text); max-width:360px; margin:0 auto; }
+  .inv .cd { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .inv .cd .cell { min-width:58px; padding:10px 6px; border-radius:var(--radius); background:var(--card); border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+  .inv .cd .num { font-family:var(--display); font-size:26px; font-weight:600; color:var(--accent); line-height:1; }
+  .inv .cd .u { font-size:10px; letter-spacing:1px; color:var(--muted); margin-top:4px; text-transform:uppercase; }
+  .inv .venue { font-family:var(--display); font-size:20px; color:var(--text); }
+  .inv .addr { font-size:13px; color:var(--muted); margin:4px auto 0; max-width:320px; }
+  .inv .mapbtn { display:inline-flex; align-items:center; gap:6px; margin-top:12px; padding:9px 18px; border-radius:var(--radius); text-decoration:none; border:1px solid var(--accent); color:var(--accent); font-size:13px; font-weight:600; }
+  .inv .grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; max-width:360px; margin:0 auto; }
+  .inv .grid div { aspect-ratio:1; border-radius:var(--radius); overflow:hidden; background:var(--bg2); }
+  .inv .grid img { width:100%; height:100%; object-fit:cover; }
+  .inv .rsvp { max-width:320px; margin:0 auto; background:var(--card); padding:16px; border-radius:var(--radius); border:1px solid color-mix(in srgb, var(--accent) 22%, transparent); display:grid; gap:10px; }
+  .inv .rsvp input { width:100%; padding:10px 12px; border-radius:var(--radius); font-size:14px; border:1px solid color-mix(in srgb, var(--muted) 45%, transparent); background:var(--card); color:var(--text); outline:none; font-family:inherit; }
+  .inv .rsvp .att { display:flex; gap:8px; }
+  .inv .rsvp .att button { flex:1; padding:9px; border-radius:var(--radius); font-size:13px; cursor:pointer; border:1px solid color-mix(in srgb, var(--accent) 40%, transparent); background:transparent; color:var(--text); }
+  .inv .rsvp .att button.sel { background:var(--accent); color:var(--card); }
+  .inv .rsvp .send { padding:11px; border-radius:var(--radius); border:none; cursor:pointer; background:var(--accent); color:var(--card); font-weight:600; font-size:14px; }
+  .inv .thanks { text-align:center; padding:18px 12px; background:var(--card); border-radius:var(--radius); border:1px solid color-mix(in srgb, var(--accent) 25%, transparent); max-width:320px; margin:0 auto; }
+  .confetti { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
+  .confetti span { position:absolute; top:-20px; border-radius:2px; opacity:.85; }
+
+  .cover { position:absolute; inset:0; z-index:30; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:34px 28px; background:linear-gradient(160deg,var(--bg),var(--bg2)); color:var(--text); font-family:var(--body); transition:transform .85s ease, opacity .6s ease; }
+  .cover.open { transform:translateY(-100%); opacity:0; pointer-events:none; }
+  .cover .clab { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--accent2); }
+  .cover h2 { font-family:var(--display); font-size:38px; line-height:1.1; margin:14px 0 6px; color:var(--text); }
+  .cover .cdate { font-family:var(--display); font-size:16px; color:var(--accent); margin-bottom:26px; }
+  .cover .cto { font-size:12px; color:var(--muted); margin-bottom:4px; letter-spacing:1px; }
+  .cover .cname { font-family:var(--display); font-size:20px; color:var(--text); margin-bottom:26px; }
+  .cover .open-btn { display:inline-flex; align-items:center; gap:8px; padding:12px 26px; border-radius:var(--radius); border:none; cursor:pointer; background:var(--accent); color:var(--card); font-weight:600; font-size:14px; box-shadow:0 8px 22px -6px color-mix(in srgb, var(--accent) 70%, transparent); animation:pulse 2.4s ease-in-out infinite; }
+
+  .music-btn { position:absolute; right:14px; bottom:14px; z-index:22; width:44px; height:44px; border-radius:99px; border:none; cursor:pointer; display:grid; place-items:center; box-shadow:0 6px 16px rgba(0,0,0,.28); color:#fff; }
+  .music-btn.spin svg { animation:spin 4s linear infinite; }
+
+  @media (min-width:900px) {
+    #app { display:flex; height:calc(100vh - 61px); }
+    .editor { width:400px; flex-shrink:0; overflow-y:auto; border-right:1px solid #22243c; }
+    .stage { flex:1; overflow-y:auto; }
+    .tabs { display:none; }
+  }
+  @media (max-width:899px) {
+    #app { display:block; }
+    body.view-edit .stage { display:none; }
+    body.view-preview .editor { display:none; }
+  }
+  /* ---- Firebase UI ---- */
+  #authOverlay { position:fixed; inset:0; z-index:200; background:#111225; display:grid; place-items:center; padding:24px; }
+  #authOverlay .abox { width:100%; max-width:380px; background:#191b2e; border:1px solid #2b2d45; border-radius:20px; padding:28px 24px; }
+  #authOverlay .alogo { width:44px; height:44px; border-radius:12px; margin:0 auto 14px; background:linear-gradient(135deg,#2f6f6a,#c9a24b); display:grid; place-items:center; }
+  #authOverlay h1 { font-size:19px; margin:0 0 4px; text-align:center; }
+  #authOverlay .asub { font-size:12.5px; color:#8b88a8; text-align:center; margin-bottom:22px; }
+  #authOverlay label { display:block; font-size:12px; font-weight:600; color:#c9c4dd; margin:0 0 6px; }
+  #authOverlay input { width:100%; padding:12px 14px; border-radius:11px; font-size:15px; margin-bottom:14px; border:1px solid #33354f; background:#20223a; color:#f0eeff; outline:none; }
+  #authOverlay .abtns { display:flex; gap:10px; }
+  #authOverlay .abtns button { flex:1; padding:13px; border-radius:11px; border:none; cursor:pointer; font-size:14px; font-weight:600; font-family:inherit; }
+  #authOverlay .primary { background:#2f6f6a; color:#fff; }
+  #authOverlay .ghost { background:transparent; color:#c9c4dd; border:1px solid #33354f; }
+  #authMsg { font-size:13px; margin-top:16px; padding:12px; border-radius:10px; text-align:center; display:none; line-height:1.5; }
+  #authMsg.err { display:block; background:#2a1416; border:1px solid #7a2f38; color:#ffb3ba; }
+
+  #cloudbar { display:none; align-items:center; justify-content:space-between; gap:8px; padding:9px 14px; background:#191b2e; border-bottom:1px solid #22243c; flex-wrap:wrap; }
+  #cloudbar .grp { display:flex; gap:6px; align-items:center; }
+  #cloudbar button { display:flex; align-items:center; gap:5px; padding:8px 12px; border-radius:9px; border:1px solid #2b2d45; background:#20223a; color:#c9c4dd; cursor:pointer; font-size:12.5px; font-weight:600; }
+  #cloudbar button.save { background:#2f6f6a; color:#fff; border-color:#2f6f6a; }
+  #cloudbar .who { font-size:11px; color:#8b88a8; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  .modal { position:fixed; inset:0; z-index:210; background:rgba(0,0,0,.6); display:grid; place-items:center; padding:20px; }
+  .modal .sheet { width:100%; max-width:420px; max-height:80vh; overflow:auto; background:#191b2e; border:1px solid #2b2d45; border-radius:18px; padding:20px; }
+  .modal h2 { font-size:16px; margin:0 0 14px; display:flex; align-items:center; justify-content:space-between; }
+  .modal .x { cursor:pointer; color:#8b88a8; background:none; border:none; font-size:20px; }
+  .inv-item { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 14px; border-radius:12px; background:#20223a; border:1px solid #2b2d45; margin-bottom:8px; }
+  .inv-item .t { font-size:14px; font-weight:600; color:#f0eeff; }
+  .inv-item .d { font-size:11px; color:#8b88a8; margin-top:2px; }
+  .inv-item .acts { display:flex; gap:6px; flex-shrink:0; }
+  .inv-item button { padding:7px 10px; border-radius:8px; border:none; cursor:pointer; font-size:12px; font-weight:600; }
+  .inv-item .open { background:#2f6f6a; color:#fff; }
+  .inv-item .del { background:#2a1416; color:#ffb3ba; }
+  .empty { text-align:center; color:#8b88a8; font-size:13px; padding:20px 0; }
+
+  #toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:#12271f; color:#8fe6b0; border:1px solid #2f6f4a; padding:11px 20px; border-radius:11px; z-index:220; font-size:13px; font-weight:600; opacity:0; transition:opacity .3s; pointer-events:none; }
+  #toast.show { opacity:1; }
+  #toast.warn { background:#2a1416; color:#ffb3ba; border-color:#7a2f38; }
+  .hidden { display:none !important; }
+  /* =====================================================================
+     TEMA APLIKASI — Cerah & Penuh Warna (SRISP)
+     Hanya mengubah tampilan editor/aplikasi. Tema undangan tidak terpengaruh.
+     ===================================================================== */
+  :root {
+    --app-bg1:#fff5f9; --app-bg2:#eef6ff;
+    --panel:#ffffff; --panel-2:#fff2f7;
+    --line:#f1e4ec; --line-2:#ffd9e6;
+    --ink:#2b2540; --ink-dim:#8a86a3;
+    --brand:#ff5b7f; --brand-2:#7c6bf5; --brand-3:#12b3a6; --sun:#ffc53d;
+  }
+  body { background:linear-gradient(180deg,var(--app-bg1),var(--app-bg2)); color:var(--ink); }
+
+  .topbar { background:linear-gradient(90deg,#ff5b7f 0%,#ff7a8f 40%,#7c6bf5 100%); color:#fff; border-bottom:none; box-shadow:0 3px 16px rgba(124,107,245,.30); }
+  .logo { background:rgba(255,255,255,.22)!important; }
+  .tabs { background:rgba(255,255,255,.20); }
+  .tabs button { color:rgba(255,255,255,.9); }
+  .tabs button.active { background:#fff; color:#ff5b7f; }
+
+  .editor { border-right:1px solid var(--line); }
+  .editor::after { content:"© SRISP 2026"; display:block; text-align:center; font-size:11px; color:var(--ink-dim); margin-top:26px; padding-top:16px; border-top:1px solid var(--line); }
+  .field > span { color:var(--ink); }
+  .field input, .field textarea { background:var(--panel); border:1px solid var(--line-2); color:var(--ink); }
+  input:focus, textarea:focus { border-color:var(--brand)!important; }
+
+  .sec-title .n { background:var(--brand); color:#fff; }
+  .sec-title .t { color:var(--ink); }
+
+  .theme-card { background:var(--panel); border:2px solid var(--line); }
+  .theme-card.active { background:var(--panel-2); border-color:var(--brand); }
+  .theme-card .nm { color:var(--ink); }
+  .theme-card .tg { color:var(--ink-dim); }
+
+  .toggle { background:var(--panel); border:1px solid var(--line); }
+  .toggle.on { background:#fff0f5; border-color:var(--brand); }
+  .toggle .ic { background:#f3eef8; color:var(--ink-dim); }
+  .toggle.on .ic { background:var(--brand); color:#fff; }
+  .toggle .lbl b { color:var(--ink); }
+  .toggle .lbl small { color:var(--ink-dim); }
+  .toggle .sw { background:#e7dced; }
+  .toggle.on .sw { background:var(--brand); }
+
+  .subbox { background:var(--panel-2); border:1px solid var(--line-2); }
+  .subbox input { background:#fff; border:1px solid var(--line-2); color:var(--ink); }
+  .subbox .add { background:var(--brand); }
+  .subbox .upl { border:1px dashed var(--brand-3); background:#e4faf7; color:#0c8f83; }
+  .subbox .or { color:var(--ink-dim); }
+  .subbox .ustat { color:#c98a1f; }
+  .subbox small { color:var(--ink-dim); }
+  .galtags span { background:#f3eef8; color:var(--ink); }
+
+  .stage { background:radial-gradient(circle at 50% 0%, #ffe6ef, #eaf4ff); }
+
+  #authOverlay { background:linear-gradient(180deg,var(--app-bg1),var(--app-bg2)); }
+  #authOverlay .abox { background:var(--panel); border:1px solid var(--line-2); box-shadow:0 24px 60px -24px rgba(124,107,245,.45); }
+  #authOverlay .alogo { background:linear-gradient(135deg,#ff5b7f,#7c6bf5)!important; }
+  #authOverlay h1 { color:var(--ink); }
+  #authOverlay .asub { color:var(--ink-dim); }
+  #authOverlay label { color:var(--ink); }
+  #authOverlay input { background:#fff; border:1px solid var(--line-2); color:var(--ink); }
+  #authOverlay .primary { background:var(--brand); }
+  #authOverlay .ghost { color:var(--brand-2); border:1px solid #ddd2f2; background:#f6f3ff; }
+
+  #cloudbar { background:#fff; border-bottom:1px solid var(--line); }
+  #cloudbar button { background:#fff; border:1px solid var(--line-2); color:var(--brand-2); }
+  #cloudbar button.save { background:var(--brand); color:#fff; border-color:var(--brand); }
+  #cloudbar .who { color:var(--ink-dim); }
+
+  .modal .sheet { background:var(--panel); border:1px solid var(--line-2); }
+  .modal h2 { color:var(--ink); }
+  .modal .x { color:var(--ink-dim); }
+  .inv-item { background:var(--panel-2); border:1px solid var(--line-2); }
+  .inv-item .t { color:var(--ink); }
+  .inv-item .d { color:var(--ink-dim); }
+  .empty { color:var(--ink-dim); }
+  .rsvp-sum { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+  .rsvp-sum > div { background:var(--panel-2); border:1px solid var(--line-2); border-radius:12px; padding:10px 4px; text-align:center; }
+  .rsvp-sum b { display:block; font-size:20px; color:var(--brand); }
+  .rsvp-sum span { font-size:10.5px; color:var(--ink-dim); }
+  .g-item { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 13px; border-radius:11px; background:var(--panel-2); border:1px solid var(--line); margin-bottom:7px; }
+  .g-name { font-size:14px; font-weight:600; color:var(--ink); }
+  .g-when { font-size:11px; color:var(--ink-dim); margin-top:2px; }
+  .g-yes { font-size:12px; font-weight:600; color:#0c8f6b; background:#e2f7ef; border:1px solid #bfe9d8; padding:5px 9px; border-radius:8px; white-space:nowrap; }
+  .g-no { font-size:12px; font-weight:600; color:#b23a48; background:#fdeaec; border:1px solid #f6cfd4; padding:5px 9px; border-radius:8px; white-space:nowrap; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes bootfade { to { opacity:0; visibility:hidden; } }
+  #boot { position:fixed; inset:0; z-index:200; display:grid; place-items:center; background:linear-gradient(160deg,#fff5f9,#f3f0ff); }
+  #boot.done { animation:bootfade .5s ease forwards; }
+  #boot .bwrap { text-align:center; }
+  .spinner { width:46px; height:46px; border-radius:50%; border:4px solid #eadff7; border-top-color:#ff5b7f; animation:spin .8s linear infinite; margin:0 auto 14px; }
+  #boot .bt { font-weight:600; color:#7c6bf5; font-size:14px; letter-spacing:.5px; }
+</style>
+</head>
+<body class="view-edit">
+<div id="boot"><div class="bwrap"><div class="spinner"></div><div class="bt">SRISP · memuat…</div></div></div>
+<div class="topbar">
+  <div class="brand">
+    <span class="logo" id="ic-logo"></span>
+    <div>
+      <div style="font-size:15px;font-weight:700;line-height:1;">Studio Undangan</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.85);">Pembuat undangan digital</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button data-tab="edit" class="active" id="tab-edit"></button>
+    <button data-tab="preview" id="tab-prev"></button>
+  </div>
+</div>
+
+<div id="cloudbar">
+  <div class="grp">
+    <button id="cb-list"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Undangan Saya</button>
+    <button id="cb-guests"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Tamu</button>
+    <button id="cb-new">+ Baru</button>
+  </div>
+  <div class="grp">
+    <button id="cb-save" class="save"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Simpan</button>
+    <button id="cb-share"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Bagikan</button>
+    <button id="cb-wa"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> WhatsApp</button>
+    <button id="cb-admin" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg> Paket</button>
+    <button id="cb-account"><span class="who" id="cb-email"></span></button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="editor" id="editor"></div>
+  <div class="stage">
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="scroll" id="preview"></div>
+        <button class="music-btn" id="music-btn" style="display:none"></button>
+        <div class="cover" id="cover"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<audio id="bgm" loop></audio>
+<div id="yt-wrap" style="position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden"><div id="yt"></div></div>
+
+<script>
+/* =====================================================================
+   PENGATURAN RSVP
+   Untuk mengumpulkan semua jawaban RSVP ke satu tempat:
+   1. Buat akun gratis di https://formspree.io
+   2. Buat "form" baru, lalu salin alamat endpoint-nya
+      (bentuknya: https://formspree.io/f/xxxxxx)
+   3. Tempel di antara tanda kutip di bawah ini.
+   Jika dibiarkan kosong, RSVP disimpan lokal di perangkat tamu saja.
+   ===================================================================== */
+var RSVP_ENDPOINT = "";
+
+/* =====================================================================
+   PENGATURAN UPLOAD FILE (Cloudinary) — gratis, tanpa kartu
+   Supaya bisa upload musik & foto langsung dari aplikasi:
+   1. Daftar gratis di https://cloudinary.com (bisa via Google/GitHub, tanpa kartu).
+   2. Di Dashboard, catat "Cloud name" milikmu.
+   3. Buka Settings (ikon gerigi) -> tab Upload -> bagian "Upload presets"
+      -> Add upload preset -> ubah "Signing Mode" jadi "Unsigned" -> Save.
+      Catat nama preset-nya.
+   4. Tempel kedua nilai itu di bawah ini.
+   Jika dibiarkan kosong, tombol upload disembunyikan; kamu masih bisa
+   menempel URL manual seperti biasa.
+   ===================================================================== */
+var CLOUDINARY_CLOUD_NAME = "dtpow34rz";
+var CLOUDINARY_UPLOAD_PRESET = "undangan.com";
+
+function cloudinaryReady(){ return !!(CLOUDINARY_CLOUD_NAME && CLOUDINARY_UPLOAD_PRESET); }
+function uploadToCloudinary(file){
+  var url="https://api.cloudinary.com/v1_1/"+CLOUDINARY_CLOUD_NAME+"/auto/upload";
+  var fd=new FormData();
+  fd.append("file", file);
+  fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+  return fetch(url, { method:"POST", body:fd })
+    .then(function(r){ if(!r.ok) throw new Error("upload gagal"); return r.json(); })
+    .then(function(d){ if(!d.secure_url) throw new Error("tanpa url"); return d.secure_url; });
+}
+
+/* ---------- Icons ---------- */
+var ICONS = {
+  mapPin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  heart:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  sparkles:'<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0Z"/>',
+  palette:'<path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8Z"/><circle cx="13.5" cy="6.5" r=".8" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".8" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".8" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".8" fill="currentColor"/>',
+  pencil:'<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497Z"/><path d="m15 5 4 4"/>',
+  eye:'<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+  plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
+  gem:'<path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/>',
+  leaf:'<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/>',
+  party:'<path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-3.9 3.9"/><path d="M15 6.5a4.5 4.5 0 0 0-4.5-4.5"/>',
+  mail:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  music:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  star:'<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.12 2.12 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.12 2.12 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.12 2.12 0 0 0-1.973 0L6.29 21.01a.53.53 0 0 1-.771-.56l.882-5.139a2.12 2.12 0 0 0-.611-1.879L2.053 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.12 2.12 0 0 0 1.597-1.16z"/>'
+};
+function icon(name, size, color) {
+  size = size || 18;
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="'+(color||'currentColor')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[name]||'')+'</svg>';
+}
+
+/* ---------- Themes ---------- */
+var THEMES = {
+  kirana:{ name:"Kirana", tag:"Elegan · botani", icon:"leaf", swatch:["#f7f4ee","#7a8b6f","#b08d57"],
+    vars:{bg:"#f6f2ea",bg2:"#efe9dc",text:"#3a4a3f",muted:"#8a917f",accent:"#7a8b6f",accent2:"#b08d57",card:"#fffdf8",radius:"4px",display:"'Cormorant Garamond', Georgia, serif",body:"'Marcellus', Georgia, serif"} },
+  senja:{ name:"Senja", tag:"Romantis · sunset", icon:"sun", swatch:["#ffe0d6","#e26d5c","#b5838d"],
+    vars:{bg:"#fff1e9",bg2:"#ffe1ec",text:"#5a3d4f",muted:"#a3808f",accent:"#e26d5c",accent2:"#b5838d",card:"#fff8f3",radius:"12px",display:"'Cormorant Garamond', Georgia, serif",body:"'Marcellus', Georgia, serif"} },
+  pesta:{ name:"Pesta", tag:"Ceria · warna-warni", icon:"party", swatch:["#ff5b7f","#ffd23f","#4ac6d2"],
+    vars:{bg:"#fff8f2",bg2:"#ffeef4",text:"#3d2b4f",muted:"#9b8aa8",accent:"#ff5b7f",accent2:"#4ac6d2",card:"#ffffff",radius:"22px",display:"'Poppins', system-ui, sans-serif",body:"'Poppins', system-ui, sans-serif"} },
+  nokta:{ name:"Nokta", tag:"Modern · dramatis", icon:"gem", swatch:["#0e0f1a","#d4af37","#6c5ce7"],
+    vars:{bg:"#0e0f1a",bg2:"#15172a",text:"#efeaff",muted:"#8b88a8",accent:"#d4af37",accent2:"#8f7bff",card:"#171932",radius:"6px",display:"'Playfair Display', Georgia, serif",body:"'Poppins', system-ui, sans-serif"} },
+  klasik:{ name:"Klasik", tag:"Minimalis · hitam-putih", icon:"star", swatch:["#fafafa","#1a1a1a","#8a8a8a"],
+    vars:{bg:"#fbfbfa",bg2:"#f1f0ee",text:"#1a1a1a",muted:"#8a8a8a",accent:"#1a1a1a",accent2:"#9a9a9a",card:"#ffffff",radius:"2px",display:"'Playfair Display', Georgia, serif",body:"'Poppins', system-ui, sans-serif"} },
+  wastra:{ name:"Wastra", tag:"Tradisional · batik", icon:"sparkles", swatch:["#f3e7d3","#8b2e2e","#b8860b"],
+    vars:{bg:"#f3e7d1",bg2:"#ecdcbe",text:"#4a2c1a",muted:"#9c7b56",accent:"#8b2e2e",accent2:"#b8860b",card:"#fbf5e8",radius:"3px",display:"'Playfair Display', Georgia, serif",body:"'Cormorant Garamond', Georgia, serif"} },
+  sakura:{ name:"Sakura", tag:"Lembut · bunga", icon:"heart", swatch:["#ffe9f0","#e88aa8","#c98aa0"],
+    vars:{bg:"#fff5f8",bg2:"#ffe6ef",text:"#5b3a4a",muted:"#b58aa0",accent:"#e2789b",accent2:"#c98aa0",card:"#fffafc",radius:"16px",display:"'Cormorant Garamond', Georgia, serif",body:"'Marcellus', Georgia, serif"} },
+  ocean:{ name:"Ocean", tag:"Segar · laut", icon:"sparkles", swatch:["#e2f0f7","#2b8fb3","#5bb0c9"],
+    vars:{bg:"#f0f8fb",bg2:"#e1eff6",text:"#1f3a4d",muted:"#6f93a5",accent:"#2b8fb3",accent2:"#5bb0c9",card:"#ffffff",radius:"10px",display:"'Playfair Display', Georgia, serif",body:"'Poppins', system-ui, sans-serif"} },
+  rustic:{ name:"Rustic", tag:"Hangat · earthy", icon:"leaf", swatch:["#e8dcc4","#a9764a","#7d9068"],
+    vars:{bg:"#f4ecdd",bg2:"#e8dcc4",text:"#4a3a28",muted:"#9c8a70",accent:"#a9764a",accent2:"#7d9068",card:"#fbf6ec",radius:"3px",display:"'Cormorant Garamond', Georgia, serif",body:"'Marcellus', Georgia, serif"} },
+  royal:{ name:"Royal", tag:"Mewah · ungu-emas", icon:"gem", swatch:["#1a1024","#d4af37","#b57edc"],
+    vars:{bg:"#1a1024",bg2:"#241436",text:"#f3ecff",muted:"#a892c0",accent:"#d4af37",accent2:"#b57edc",card:"#241633",radius:"6px",display:"'Playfair Display', Georgia, serif",body:"'Poppins', system-ui, sans-serif"} }
+};
+
+/* ---------- State ---------- */
+var future = new Date(); future.setDate(future.getDate()+45); future.setHours(10,0,0,0);
+var state = {
+  kind:"Pernikahan", title:"Andi & Sinta", hosts:"Putra dari Bpk. Budi & Ibu Ani",
+  date: future.toISOString().slice(0,16),
+  venue:"Gedung Serbaguna Melati", address:"Jl. Merdeka No. 10, Jakarta Pusat",
+  message:"Dengan penuh syukur, kami mengundang Bapak/Ibu/Saudara/i untuk hadir dan memberikan doa restu pada hari bahagia kami.",
+  guest:"", musicUrl:"", photos:[], theme:"kirana", slug:"", waGreeting:"netral", lat:null, lng:null,
+  schedule:[], gifts:[],
+  features:{ cover:true, countdown:true, rsvp:true, map:true, music:false, gallery:false, schedule:false, gift:false }
+};
+var coverOpen = false;
+var musicPlaying = false;
+
+/* ---------- Helpers ---------- */
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function slug(s){ return (s||"acara").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40); }
+function fmtDate(iso){ if(!iso) return ""; var d=new Date(iso); if(isNaN(d)) return ""; return d.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"}); }
+function fmtTime(iso){ if(!iso) return ""; var d=new Date(iso); if(isNaN(d)) return ""; return d.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})+" WIB"; }
+function themeVars(v){ return "--bg:"+v.bg+";--bg2:"+v.bg2+";--text:"+v.text+";--muted:"+v.muted+";--accent:"+v.accent+";--accent2:"+v.accent2+";--card:"+v.card+";--radius:"+v.radius+";--display:"+v.display+";--body:"+v.body+";"; }
+
+function divider(t){
+  if(t==="kirana"||t==="senja"||t==="sakura"||t==="ocean"||t==="rustic") return '<svg width="120" height="20" viewBox="0 0 120 20" style="margin:6px auto;display:block"><line x1="0" y1="10" x2="45" y2="10" stroke="var(--accent2)" stroke-width="1"/><line x1="75" y1="10" x2="120" y2="10" stroke="var(--accent2)" stroke-width="1"/><path d="M60 3 C 66 8, 66 12, 60 17 C 54 12, 54 8, 60 3 Z" fill="var(--accent)"/></svg>';
+  if(t==="wastra") return '<div style="height:14px;margin:8px auto;width:160px;background:repeating-linear-gradient(90deg,var(--accent) 0 6px,transparent 6px 12px);opacity:.7"></div>';
+  if(t==="nokta"||t==="royal") return '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0"><div style="height:1px;width:50px;background:var(--accent)"></div>'+icon("gem",12,"var(--accent)")+'<div style="height:1px;width:50px;background:var(--accent)"></div></div>';
+  if(t==="klasik") return '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0"><div style="height:1px;width:60px;background:var(--muted)"></div><span style="width:5px;height:5px;border-radius:99px;background:var(--text)"></span><div style="height:1px;width:60px;background:var(--muted)"></div></div>';
+  return '<div style="display:flex;justify-content:center;gap:6px;margin:8px 0"><span style="width:8px;height:8px;border-radius:99px;background:#ff5b7f"></span><span style="width:8px;height:8px;border-radius:99px;background:#ffd23f"></span><span style="width:8px;height:8px;border-radius:99px;background:#4ac6d2"></span></div>';
+}
+function confetti(){
+  var colors=["#ff5b7f","#ffd23f","#4ac6d2","#7b61ff","#5fd68a"], out='<div class="confetti">';
+  for(var i=0;i<26;i++){
+    var left=Math.random()*100, delay=Math.random()*5, dur=4+Math.random()*4, sz=6+Math.random()*6, rot=Math.random()*360, col=colors[i%5];
+    out+='<span style="left:'+left+'%;width:'+sz+'px;height:'+(sz*1.6)+'px;background:'+col+';transform:rotate('+rot+'deg);animation:fall '+dur+'s linear '+delay+'s infinite"></span>';
+  }
+  return out+'</div>';
+}
+
+/* ---------- Build preview ---------- */
+function buildPreview(){
+  var t=THEMES[state.theme], v=t.vars, f=state.features;
+  var styleVars=themeVars(v);
+  var mapUrl = (state.lat!=null && state.lng!=null)
+    ? ("https://www.google.com/maps/search/?api=1&query="+state.lat+","+state.lng)
+    : ("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(state.address||state.venue||""));
+  var html='<div class="inv" style="'+styleVars+'">';
+  if(state.theme==="pesta") html+=confetti();
+
+  html+='<div class="s" style="padding-top:44px;padding-bottom:30px'+(state.theme==="nokta"?';border-bottom:1px solid color-mix(in srgb, var(--accent) 35%, transparent)':'')+'">';
+  html+='<div class="lab" style="color:var(--accent2)">Undangan '+esc(state.kind||"Acara")+'</div>';
+  html+='<h1 style="font-weight:'+(state.theme==="pesta"?"700":"500")+'">'+esc(state.title||"Judul Acara")+'</h1>';
+  if(state.hosts) html+='<p class="hosts">'+esc(state.hosts)+'</p>';
+  html+=divider(state.theme);
+  if(state.date){ html+='<div style="margin-top:6px"><p class="datebig">'+esc(fmtDate(state.date))+'</p><p class="datesm">'+esc(fmtTime(state.date))+'</p></div>'; }
+  html+='</div>';
+
+  if(state.message){ html+='<div class="s" style="padding-top:6px"><p class="msg" style="font-style:'+(state.theme==="kirana"||state.theme==="senja"?"italic":"normal")+'">'+esc(state.message)+'</p></div>'; }
+
+  if(f.countdown && state.date){
+    html+='<div class="s"><div class="lab">Menuju Hari Bahagia</div><div class="cd">'
+      +'<div class="cell"><div class="num" id="cd-d">00</div><div class="u">Hari</div></div>'
+      +'<div class="cell"><div class="num" id="cd-h">00</div><div class="u">Jam</div></div>'
+      +'<div class="cell"><div class="num" id="cd-m">00</div><div class="u">Menit</div></div>'
+      +'<div class="cell"><div class="num" id="cd-s">00</div><div class="u">Detik</div></div>'
+      +'</div></div>';
+  }
+
+  if(f.map && (state.venue||state.address)){
+    html+='<div class="s"><div class="lab">Lokasi</div>'+icon("mapPin",22,"var(--accent)");
+    if(state.venue) html+='<p class="venue">'+esc(state.venue)+'</p>';
+    if(state.address) html+='<p class="addr">'+esc(state.address)+'</p>';
+    html+='<a class="mapbtn" target="_blank" rel="noreferrer" href="'+esc(mapUrl)+'">'+icon("mapPin",14)+' Buka Peta</a>';
+    if(state.lat!=null && state.lng!=null){
+      var bb=(state.lng-0.006)+","+(state.lat-0.004)+","+(state.lng+0.006)+","+(state.lat+0.004);
+      html+='<div style="margin-top:12px"><iframe src="https://www.openstreetmap.org/export/embed.html?bbox='+bb+'&layer=mapnik&marker='+state.lat+','+state.lng+'" style="width:100%;max-width:340px;height:190px;border:0;border-radius:var(--radius)" loading="lazy"></iframe></div>';
+    }
+    html+='</div>';
+  }
+
+  if(f.gallery){
+    html+='<div class="s"><div class="lab">Galeri</div>';
+    if(state.photos.length){
+      html+='<div class="grid">';
+      for(var i=0;i<state.photos.length;i++){ html+='<div><img src="'+esc(state.photos[i])+'" alt="" onerror="this.style.opacity=.2"></div>'; }
+      html+='</div>';
+    } else { html+='<p class="addr">Belum ada foto ditambahkan.</p>'; }
+    html+='</div>';
+  }
+
+  if(f.schedule && state.schedule && state.schedule.length){
+    html+='<div class="s"><div class="lab">Susunan Acara</div><div style="max-width:360px;margin:0 auto;text-align:left">';
+    for(var si=0; si<state.schedule.length; si++){ var it=state.schedule[si];
+      html+='<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--muted) 22%,transparent)">'
+        +'<div style="min-width:78px;font-family:var(--display);color:var(--accent);font-size:15px">'+esc(it.time||"")+'</div>'
+        +'<div><div style="font-weight:600">'+esc(it.name||"")+'</div>'+(it.note?'<div style="font-size:12px;color:var(--muted);margin-top:2px">'+esc(it.note)+'</div>':'')+'</div></div>';
+    }
+    html+='</div></div>';
+  }
+
+  if(f.gift && state.gifts && state.gifts.length){
+    html+='<div class="s"><div class="lab">Amplop Digital</div>'
+      +'<p class="addr" style="margin-bottom:14px">Doa restu Anda sudah cukup. Bila ingin memberi tanda kasih, dapat melalui:</p>'
+      +'<div style="max-width:340px;margin:0 auto;display:grid;gap:10px">';
+    for(var gi=0; gi<state.gifts.length; gi++){ var g=state.gifts[gi];
+      html+='<div style="background:var(--card);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-radius:var(--radius);padding:14px;text-align:center">'
+        +'<div style="font-family:var(--display);font-size:17px;color:var(--text)">'+esc(g.bank||"")+'</div>'
+        +'<div style="font-size:18px;letter-spacing:1px;color:var(--accent);margin:6px 0">'+esc(g.number||"")+'</div>'
+        +'<div style="font-size:12px;color:var(--muted)">a.n. '+esc(g.holder||"")+'</div>'
+        +'<button data-n="'+esc(g.number||"")+'" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.getAttribute(\'data-n\'));this.textContent=\'Tersalin \u2713\'" style="margin-top:10px;padding:7px 14px;border-radius:var(--radius);border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Salin No. Rekening</button></div>';
+    }
+    html+='</div></div>';
+  }
+
+  if(f.rsvp){
+    html+='<div class="s"><div class="lab">Konfirmasi Kehadiran</div>'
+      +'<p class="addr" style="margin-bottom:14px">Mohon konfirmasi kehadiranmu ya.</p>'
+      +'<div id="rsvp-box"></div></div>';
+  }
+
+  html+='<div class="s" style="padding-top:30px">'+icon("heart",16,"var(--accent)")
+    +'<p style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-top:8px">Merupakan suatu kehormatan atas kehadiran Anda</p></div>';
+
+  html+='</div>';
+  return html;
+}
+
+/* ---------- Cover ---------- */
+function renderCover(){
+  var el=document.getElementById("cover");
+  var t=THEMES[state.theme], v=t.vars;
+  if(!state.features.cover){ el.style.display="none"; return; }
+  el.setAttribute("style", themeVars(v));
+  el.className = "cover" + (coverOpen ? " open" : "");
+  el.style.display = coverOpen ? "none" : "flex";
+  if(coverOpen) return;
+  var guest = state.guest && state.guest.trim() ? esc(state.guest) : "Bapak/Ibu/Saudara/i";
+  el.innerHTML =
+    '<div class="clab">Undangan '+esc(state.kind||"Acara")+'</div>'
+    +'<h2>'+esc(state.title||"Judul Acara")+'</h2>'
+    +(state.date?'<div class="cdate">'+esc(fmtDate(state.date))+'</div>':'')
+    +'<div class="cto">Kepada Yth.</div>'
+    +'<div class="cname">'+guest+'</div>'
+    +'<button class="open-btn" id="open-btn">'+icon("mail",16)+' Buka Undangan</button>';
+  var btn=document.getElementById("open-btn");
+  btn.onclick=function(){
+    coverOpen=true;
+    el.classList.add("open");
+    setTimeout(function(){ el.style.display="none"; }, 850);
+    if(state.features.music && state.musicUrl){ startMusic(); }
+  };
+}
+
+/* ---------- Music (URL mp3 atau link YouTube) ---------- */
+function ytId(url){
+  if(!url) return null;
+  var m=String(url).match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m?m[1]:null;
+}
+var ytPlayer=null, ytCurrent="";
+function loadYTApi(cb){
+  if(window.YT && window.YT.Player){ cb(); return; }
+  var prev=window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady=function(){ if(prev) prev(); cb(); };
+  if(!document.getElementById("yt-api")){
+    var s=document.createElement("script"); s.id="yt-api"; s.src="https://www.youtube.com/iframe_api";
+    document.head.appendChild(s);
+  }
+}
+function ensureYt(id, autoplay){
+  loadYTApi(function(){
+    if(!ytPlayer){
+      ytPlayer=new YT.Player("yt",{height:"1",width:"1",videoId:id,
+        playerVars:{autoplay:autoplay?1:0,controls:0,loop:1,playlist:id,playsinline:1},
+        events:{ onReady:function(e){ ytCurrent=id; if(autoplay){ try{e.target.playVideo();}catch(x){} musicPlaying=true; updateMusic(); } },
+                 onStateChange:function(e){ if(e.data===YT.PlayerState.ENDED){ try{ytPlayer.playVideo();}catch(x){} } } }});
+    } else if(ytCurrent!==id){
+      ytCurrent=id; try{ytPlayer.loadVideoById(id);}catch(x){}
+      if(autoplay){ musicPlaying=true; updateMusic(); } else { try{ytPlayer.pauseVideo();}catch(x){} }
+    } else if(autoplay){ try{ytPlayer.playVideo();}catch(x){} musicPlaying=true; updateMusic(); }
+  });
+}
+function updateMusic(){
+  var btn=document.getElementById("music-btn"), audio=document.getElementById("bgm");
+  var v=THEMES[state.theme].vars;
+  if(!state.features.music || !state.musicUrl){ btn.style.display="none"; if(audio) audio.pause(); if(ytPlayer){ try{ytPlayer.pauseVideo();}catch(x){} } musicPlaying=false; return; }
+  var yid=ytId(state.musicUrl);
+  if(yid){ ensureYt(yid, false); }
+  else { if(audio.getAttribute("src")!==state.musicUrl) audio.setAttribute("src", state.musicUrl); }
+  btn.style.display="grid";
+  btn.style.background=v.accent;
+  btn.className="music-btn"+(musicPlaying?" spin":"");
+  btn.innerHTML=icon("music",20,"#fff");
+  btn.onclick=function(){ if(musicPlaying){ pauseMusic(); } else { startMusic(); } };
+}
+function startMusic(){
+  if(!state.musicUrl) return;
+  var yid=ytId(state.musicUrl);
+  if(yid){ ensureYt(yid, true); return; }
+  var audio=document.getElementById("bgm");
+  if(audio.getAttribute("src")!==state.musicUrl) audio.setAttribute("src", state.musicUrl);
+  var p=audio.play();
+  if(p && p.then){ p.then(function(){ musicPlaying=true; updateMusic(); }).catch(function(){ musicPlaying=false; updateMusic(); }); }
+  else { musicPlaying=true; updateMusic(); }
+}
+function pauseMusic(){
+  var audio=document.getElementById("bgm"); if(audio) audio.pause();
+  if(ytPlayer){ try{ytPlayer.pauseVideo();}catch(x){} }
+  musicPlaying=false; updateMusic();
+}
+
+/* ---------- RSVP ---------- */
+function rsvpKey(){ return "rsvp:"+slug(state.title); }
+function getRsvp(){ try{ var r=localStorage.getItem(rsvpKey()); return r?JSON.parse(r):[]; }catch(e){ return []; } }
+var rsvpDraft={ name:"", count:1, attend:"hadir", done:false };
+
+function sendRsvp(entry){
+  if(RSVP_ENDPOINT){
+    return fetch(RSVP_ENDPOINT, { method:"POST", headers:{ "Content-Type":"application/json", "Accept":"application/json" }, body:JSON.stringify(entry) })
+      .then(function(r){ if(!r.ok) throw new Error("gagal"); return r; });
+  }
+  var list=getRsvp(); list.unshift(entry);
+  try{ localStorage.setItem(rsvpKey(), JSON.stringify(list)); }catch(e){}
+  return Promise.resolve();
+}
+
+function renderRsvp(){
+  var box=document.getElementById("rsvp-box"); if(!box) return;
+  if(rsvpDraft.done){
+    var extra="";
+    if(!RSVP_ENDPOINT){
+      var list=getRsvp(), coming=0;
+      for(var i=0;i<list.length;i++){ if(list[i].kehadiran==="hadir") coming+=(list[i].jumlah||0); }
+      extra='<p style="font-size:12px;color:var(--accent);margin-top:8px">'+coming+' tamu akan hadir</p>';
+    }
+    box.innerHTML='<div class="thanks">'+icon("check",26,"var(--accent)")
+      +'<p style="font-family:var(--display);font-size:19px;margin:8px 0 2px;color:var(--text)">Terima kasih!</p>'
+      +'<p style="font-size:13px;color:var(--muted)">Konfirmasimu sudah tercatat.</p>'+extra+'</div>';
+    return;
+  }
+  box.innerHTML='<div class="rsvp">'
+    +'<input id="rv-name" placeholder="Nama kamu" value="'+esc(rsvpDraft.name)+'">'
+    +'<div class="att"><button data-att="hadir" class="'+(rsvpDraft.attend==="hadir"?"sel":"")+'">Hadir</button>'
+    +'<button data-att="tidak" class="'+(rsvpDraft.attend==="tidak"?"sel":"")+'">Tidak</button></div>'
+    +(rsvpDraft.attend==="hadir"?'<input id="rv-count" type="number" min="1" max="20" value="'+esc(rsvpDraft.count)+'" placeholder="Jumlah tamu">':'')
+    +'<button class="send" id="rv-send">Kirim Konfirmasi</button></div>';
+  var nm=document.getElementById("rv-name"); if(nm) nm.oninput=function(){ rsvpDraft.name=this.value; };
+  var ct=document.getElementById("rv-count"); if(ct) ct.oninput=function(){ rsvpDraft.count=this.value; };
+  var atts=box.querySelectorAll(".att button");
+  for(var i=0;i<atts.length;i++){ atts[i].onclick=function(){ rsvpDraft.attend=this.getAttribute("data-att"); renderRsvp(); }; }
+  var send=document.getElementById("rv-send");
+  send.onclick=function(){
+    if(!rsvpDraft.name.trim()) return;
+    var entry={ acara:state.title, nama:rsvpDraft.name.trim(), kehadiran:rsvpDraft.attend, jumlah:Number(rsvpDraft.count)||1, waktu:new Date().toISOString() };
+    send.disabled=true; send.textContent="Mengirim...";
+    sendRsvp(entry).then(function(){ rsvpDraft.done=true; renderRsvp(); })
+    .catch(function(){ send.disabled=false; send.textContent="Coba lagi"; });
+  };
+}
+
+/* ---------- Countdown ---------- */
+function tick(){
+  if(!(state.features.countdown && state.date)) return;
+  var el=document.getElementById("cd-d"); if(!el) return;
+  var diff=Math.max(0, new Date(state.date).getTime()-Date.now());
+  var d=Math.floor(diff/86400000), h=Math.floor((diff%86400000)/3600000), m=Math.floor((diff%3600000)/60000), s=Math.floor((diff%60000)/1000);
+  function p(n){ return String(n).padStart(2,"0"); }
+  el.textContent=p(d);
+  document.getElementById("cd-h").textContent=p(h);
+  document.getElementById("cd-m").textContent=p(m);
+  document.getElementById("cd-s").textContent=p(s);
+}
+
+/* ---------- Render ---------- */
+function renderPreview(){
+  document.getElementById("preview").innerHTML=buildPreview();
+  renderRsvp();
+  renderCover();
+  updateMusic();
+  tick();
+}
+
+/* ---------- Editor ---------- */
+function buildEditor(){
+  var e=document.getElementById("editor");
+  var themeCards="";
+  for(var key in THEMES){
+    var t=THEMES[key], active=(key===state.theme);
+    themeCards+='<button class="theme-card'+(active?" active":"")+'" data-theme="'+key+'">'
+      +'<div class="sw"><span style="background:'+t.swatch[0]+'"></span><span style="background:'+t.swatch[1]+'"></span><span style="background:'+t.swatch[2]+'"></span></div>'
+      +'<div class="nm">'+icon(t.icon,14,active?"#c9a24b":"#8b88a8")+'<span>'+t.name+'</span></div>'
+      +'<div class="tg">'+t.tag+'</div></button>';
+  }
+  function tg(k,ic,lbl,desc){
+    var on=state.features[k];
+    return '<button class="toggle'+(on?" on":"")+'" data-feat="'+k+'"><span class="ic">'+icon(ic,17)+'</span>'
+      +'<span class="lbl"><b>'+lbl+'</b><small>'+desc+'</small></span><span class="sw"><i></i></span></button>';
+  }
+  e.innerHTML=
+    '<div class="sec-title"><span class="n">1</span>'+icon("pencil",15,"#8b88a8")+'<span class="t">Detail Acara</span></div>'
+    +'<label class="field"><span>Jenis acara</span><input data-k="kind" value="'+esc(state.kind)+'"></label>'
+    +'<label class="field"><span>Judul / nama</span><input data-k="title" value="'+esc(state.title)+'"></label>'
+    +'<label class="field"><span>Keterangan tuan rumah</span><input data-k="hosts" value="'+esc(state.hosts)+'"></label>'
+    +'<label class="field"><span>Tanggal & waktu</span><input data-k="date" type="datetime-local" value="'+esc(state.date)+'"></label>'
+    +'<label class="field"><span>Nama tempat</span><input data-k="venue" value="'+esc(state.venue)+'"></label>'
+    +'<label class="field"><span>Alamat lengkap (untuk peta)</span><input data-k="address" value="'+esc(state.address)+'"></label>'
+    +'<button type="button" onclick="openMap()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:10px;border:1px dashed #12b3a6;background:#e4faf7;color:#0c8f83;font-weight:600;font-size:13px;cursor:pointer;margin:-4px 0 6px">'+icon("mapPin",15)+' Atur titik lokasi di peta</button>'
+    +'<div id="map-set" style="font-size:11px;color:#8a86a3;margin-bottom:14px">'+(state.lat!=null?"Titik lokasi sudah diatur \u2713":"Belum diatur \u2014 peta memakai pencarian alamat")+'</div>'
+    +'<label class="field"><span>Pesan / kata sambutan</span><textarea data-k="message">'+esc(state.message)+'</textarea></label>'
+    +'<label class="field"><span>Nama tamu di sampul (opsional)</span><input data-k="guest" value="'+esc(state.guest)+'" placeholder="Kosongkan untuk sapaan umum"></label>'
+    +'<label class="field"><span>Nama link undangan (untuk dibagikan)</span><input data-k="slug" value="'+esc(state.slug)+'" placeholder="mis. andi-sinta (otomatis jika kosong)"></label>'
+    +'<label class="field"><span>Gaya salam pesan WhatsApp</span><select data-k="waGreeting" style="width:100%;padding:11px 12px;border-radius:10px;font-size:14px;border:1px solid var(--line-2,#33354f);background:#fff;color:var(--ink,#2b2540);outline:none;font-family:inherit"><option value="netral"'+(state.waGreeting==="islami"?"":" selected")+'>Netral & sopan</option><option value="islami"'+(state.waGreeting==="islami"?" selected":"")+'>Islami (Assalamu\'alaikum)</option></select></label>'
+    +'<div class="sec-title"><span class="n">2</span>'+icon("palette",15,"#8b88a8")+'<span class="t">Pilih Desain</span></div>'
+    +'<div class="themes">'+themeCards+'</div>'
+    +'<div class="sec-title"><span class="n">3</span>'+icon("sparkles",15,"#8b88a8")+'<span class="t">Fitur</span></div>'
+    +tg("cover","mail","Sampul pembuka","Layar \'Buka Undangan\'")
+    +tg("countdown","clock","Hitung mundur","Timer menuju hari-H")
+    +tg("rsvp","users","RSVP","Tamu konfirmasi kehadiran")
+    +tg("map","mapPin","Peta lokasi","Tombol buka Google Maps")
+    +tg("schedule","clock","Susunan acara","Rundown waktu acara")
+    +'<div id="sched-wrap"></div>'
+    +tg("gift","gem","Amplop digital","Rekening hadiah")
+    +'<div id="gift-wrap"></div>'
+    +tg("music","music","Musik latar","Diputar saat sampul dibuka")
+    +'<div id="music-wrap"></div>'
+    +tg("gallery","image","Galeri foto","Kumpulan foto acara")
+    +'<div id="gal-wrap"></div>';
+
+  var inputs=e.querySelectorAll("[data-k]");
+  for(var i=0;i<inputs.length;i++){
+    inputs[i].addEventListener("input", function(){
+      state[this.getAttribute("data-k")]=this.value;
+      rsvpDraft.done=false;
+      renderPreview();
+    });
+  }
+  var cards=e.querySelectorAll("[data-theme]");
+  for(var j=0;j<cards.length;j++){
+    cards[j].addEventListener("click", function(){ state.theme=this.getAttribute("data-theme"); buildEditor(); renderPreview(); });
+  }
+  var togs=e.querySelectorAll("[data-feat]");
+  for(var k=0;k<togs.length;k++){
+    togs[k].addEventListener("click", function(){
+      var key=this.getAttribute("data-feat");
+      state.features[key]=!state.features[key];
+      if(key==="cover" && state.features.cover) coverOpen=false;
+      buildEditor(); renderPreview();
+    });
+  }
+  renderMusicBox();
+  renderGalleryBox();
+  renderScheduleBox();
+  renderGiftBox();
+}
+
+function renderScheduleBox(){
+  var wrap=document.getElementById("sched-wrap"); if(!wrap) return;
+  if(!Array.isArray(state.schedule)) state.schedule=[];
+  if(!state.features.schedule){ wrap.innerHTML=""; return; }
+  var rows="";
+  for(var i=0;i<state.schedule.length;i++){ var it=state.schedule[i];
+    rows+='<div style="display:flex;gap:6px;margin-bottom:6px">'
+      +'<input data-si="'+i+'" data-fld="time" value="'+esc(it.time||"")+'" placeholder="08.00" style="width:80px;padding:9px;border-radius:9px;border:1px solid #33354f;background:#191b2e;color:#f0eeff;outline:none">'
+      +'<input data-si="'+i+'" data-fld="name" value="'+esc(it.name||"")+'" placeholder="Akad Nikah" style="flex:1;padding:9px;border-radius:9px;border:1px solid #33354f;background:#191b2e;color:#f0eeff;outline:none">'
+      +'<button data-sdel="'+i+'" style="padding:0 10px;border-radius:9px;border:none;background:#2a1416;color:#ffb3ba;cursor:pointer">'+icon("trash",13)+'</button></div>';
+  }
+  wrap.innerHTML='<div class="subbox">'+rows+'<button class="add" id="sched-add" style="width:100%;padding:10px;margin-top:2px">'+icon("plus",15)+' Tambah acara</button></div>';
+  document.getElementById("sched-add").onclick=function(){ state.schedule.push({time:"",name:"",note:""}); renderScheduleBox(); renderPreview(); };
+  var fs=wrap.querySelectorAll("[data-si]");
+  for(var f=0;f<fs.length;f++){ fs[f].addEventListener("input", function(){ var idx=Number(this.getAttribute("data-si")); state.schedule[idx][this.getAttribute("data-fld")]=this.value; renderPreview(); }); }
+  var ds=wrap.querySelectorAll("[data-sdel]");
+  for(var d=0;d<ds.length;d++){ ds[d].onclick=function(){ state.schedule.splice(Number(this.getAttribute("data-sdel")),1); renderScheduleBox(); renderPreview(); }; }
+}
+
+function renderGiftBox(){
+  var wrap=document.getElementById("gift-wrap"); if(!wrap) return;
+  if(!Array.isArray(state.gifts)) state.gifts=[];
+  if(!state.features.gift){ wrap.innerHTML=""; return; }
+  var rows="";
+  for(var i=0;i<state.gifts.length;i++){ var g=state.gifts[i];
+    rows+='<div style="border:1px solid #2b2d45;border-radius:10px;padding:8px;margin-bottom:8px">'
+      +'<div style="display:flex;gap:6px;margin-bottom:6px"><input data-gi="'+i+'" data-fld="bank" value="'+esc(g.bank||"")+'" placeholder="Bank/e-wallet (BCA)" style="flex:1;padding:9px;border-radius:9px;border:1px solid #33354f;background:#191b2e;color:#f0eeff;outline:none">'
+      +'<button data-gdel="'+i+'" style="padding:0 10px;border-radius:9px;border:none;background:#2a1416;color:#ffb3ba;cursor:pointer">'+icon("trash",13)+'</button></div>'
+      +'<input data-gi="'+i+'" data-fld="number" value="'+esc(g.number||"")+'" placeholder="No. rekening" style="width:100%;padding:9px;border-radius:9px;border:1px solid #33354f;background:#191b2e;color:#f0eeff;outline:none;margin-bottom:6px">'
+      +'<input data-gi="'+i+'" data-fld="holder" value="'+esc(g.holder||"")+'" placeholder="Atas nama" style="width:100%;padding:9px;border-radius:9px;border:1px solid #33354f;background:#191b2e;color:#f0eeff;outline:none"></div>';
+  }
+  wrap.innerHTML='<div class="subbox">'+rows+'<button class="add" id="gift-add" style="width:100%;padding:10px;margin-top:2px">'+icon("plus",15)+' Tambah rekening</button></div>';
+  document.getElementById("gift-add").onclick=function(){ state.gifts.push({bank:"",number:"",holder:""}); renderGiftBox(); renderPreview(); };
+  var fs=wrap.querySelectorAll("[data-gi]");
+  for(var f=0;f<fs.length;f++){ fs[f].addEventListener("input", function(){ var idx=Number(this.getAttribute("data-gi")); state.gifts[idx][this.getAttribute("data-fld")]=this.value; renderPreview(); }); }
+  var ds=wrap.querySelectorAll("[data-gdel]");
+  for(var d=0;d<ds.length;d++){ ds[d].onclick=function(){ state.gifts.splice(Number(this.getAttribute("data-gdel")),1); renderGiftBox(); renderPreview(); }; }
+}
+
+function renderMusicBox(){
+  var wrap=document.getElementById("music-wrap"); if(!wrap) return;
+  if(!state.features.music){ wrap.innerHTML=""; return; }
+  var uploadUI = cloudinaryReady()
+    ? '<button class="upl" id="music-upl">'+icon("plus",15)+' Upload musik dari perangkat</button>'
+      +'<input type="file" id="music-file" accept="audio/*" style="display:none">'
+      +'<div class="or">— atau tempel URL —</div>'
+    : '';
+  wrap.innerHTML='<div class="subbox">'
+    + uploadUI
+    + '<div class="row"><input id="music-input" placeholder="Link YouTube atau URL .mp3" value="'+esc(state.musicUrl)+'"></div>'
+    + '<div id="music-status" class="ustat"></div>'
+    + '<small>Boleh tempel link YouTube atau URL file .mp3. Musik mulai otomatis saat tamu menekan "Buka Undangan".</small></div>';
+  var inp=document.getElementById("music-input");
+  inp.addEventListener("input", function(){ state.musicUrl=this.value.trim(); updateMusic(); });
+  if(cloudinaryReady()){
+    var fileInp=document.getElementById("music-file");
+    document.getElementById("music-upl").onclick=function(){ fileInp.click(); };
+    fileInp.addEventListener("change", function(){
+      if(!this.files || !this.files[0]) return;
+      var status=document.getElementById("music-status");
+      status.textContent="Mengunggah musik...";
+      uploadToCloudinary(this.files[0]).then(function(u){
+        state.musicUrl=u;
+        var mi=document.getElementById("music-input"); if(mi) mi.value=u;
+        status.textContent="Berhasil diunggah \u2713";
+        updateMusic();
+      }).catch(function(){ status.textContent="Gagal mengunggah, coba lagi."; });
+    });
+  }
+}
+
+function renderGalleryBox(){
+  var wrap=document.getElementById("gal-wrap"); if(!wrap) return;
+  if(!state.features.gallery){ wrap.innerHTML=""; return; }
+  var tags="";
+  for(var i=0;i<state.photos.length;i++){ tags+='<span>Foto '+(i+1)+'<i data-del="'+i+'">'+icon("trash",12)+'</i></span>'; }
+  var uploadUI = cloudinaryReady()
+    ? '<button class="upl" id="gal-upl">'+icon("plus",15)+' Upload foto dari perangkat</button>'
+      +'<input type="file" id="gal-file" accept="image/*" multiple style="display:none">'
+      +'<div class="or">— atau tempel URL —</div>'
+    : '';
+  wrap.innerHTML='<div class="subbox">'
+    + uploadUI
+    + '<div class="row"><input id="gal-input" placeholder="URL gambar..."><button class="add" id="gal-add">'+icon("plus",16)+'</button></div>'
+    + '<div id="gal-status" class="ustat"></div>'
+    + (state.photos.length?'<div class="galtags">'+tags+'</div>':'')
+    + '</div>';
+  var inp=document.getElementById("gal-input");
+  function add(){ if(!inp.value.trim()) return; state.photos.push(inp.value.trim()); inp.value=""; renderGalleryBox(); renderPreview(); }
+  document.getElementById("gal-add").onclick=add;
+  inp.addEventListener("keydown", function(ev){ if(ev.key==="Enter") add(); });
+  var dels=wrap.querySelectorAll("[data-del]");
+  for(var d=0;d<dels.length;d++){
+    dels[d].onclick=function(){ var idx=Number(this.getAttribute("data-del")); state.photos.splice(idx,1); renderGalleryBox(); renderPreview(); };
+  }
+  if(cloudinaryReady()){
+    var fileInp=document.getElementById("gal-file");
+    document.getElementById("gal-upl").onclick=function(){ fileInp.click(); };
+    fileInp.addEventListener("change", function(){
+      var files=this.files; if(!files || !files.length) return;
+      var status=document.getElementById("gal-status");
+      var total=files.length, ok=0;
+      status.textContent="Mengunggah "+total+" foto...";
+      function next(idx){
+        if(idx>=total){ status.textContent=ok+" foto berhasil diunggah \u2713"; renderGalleryBox(); renderPreview(); return; }
+        uploadToCloudinary(files[idx]).then(function(u){ state.photos.push(u); ok++; }).catch(function(){}).then(function(){ next(idx+1); });
+      }
+      next(0);
+    });
+  }
+}
+
+/* ---------- Tabs ---------- */
+function initTabs(){
+  document.getElementById("ic-logo").innerHTML=icon("sparkles",17,"#fff");
+  document.getElementById("tab-edit").innerHTML=icon("pencil",14)+" Edit";
+  document.getElementById("tab-prev").innerHTML=icon("eye",14)+" Pratinjau";
+  var btns=document.querySelectorAll(".tabs button");
+  for(var i=0;i<btns.length;i++){
+    btns[i].addEventListener("click", function(){
+      var tab=this.getAttribute("data-tab");
+      document.body.className = tab==="edit" ? "view-edit" : "view-preview";
+      for(var j=0;j<btns.length;j++){ btns[j].classList.remove("active"); }
+      this.classList.add("active");
+    });
+  }
+}
+
+/* ---------- Map picker (Leaflet/OSM) ---------- */
+var L_map=null, L_marker=null;
+function openMap(){
+  var modal=document.getElementById("mapModal"); modal.classList.remove("hidden");
+  var lat=(state.lat!=null)?state.lat:-2.5, lng=(state.lng!=null)?state.lng:118, zoom=(state.lat!=null)?16:4;
+  setTimeout(function(){
+    if(typeof L==="undefined"){ document.getElementById("map-status").textContent="Peta gagal dimuat (cek koneksi)."; return; }
+    if(!L_map){
+      L_map=L.map("map").setView([lat,lng],zoom);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(L_map);
+      L_marker=L.marker([lat,lng],{draggable:true}).addTo(L_map);
+      L_map.on("click",function(e){ L_marker.setLatLng(e.latlng); });
+    } else {
+      L_map.setView([lat,lng],zoom); L_marker.setLatLng([lat,lng]);
+    }
+    L_map.invalidateSize();
+  },250);
+}
+function mapSearch(){
+  var q=document.getElementById("map-q").value.trim(); if(!q) return;
+  var st=document.getElementById("map-status"); st.textContent="Mencari...";
+  fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q="+encodeURIComponent(q))
+    .then(function(r){ return r.json(); })
+    .then(function(a){ if(a && a.length){ var la=parseFloat(a[0].lat), ln=parseFloat(a[0].lon); L_map.setView([la,ln],16); L_marker.setLatLng([la,ln]); st.textContent=""; } else { st.textContent="Lokasi tidak ditemukan."; } })
+    .catch(function(){ st.textContent="Gagal mencari. Coba lagi."; });
+}
+function saveMapPoint(){
+  if(!L_marker) return;
+  var ll=L_marker.getLatLng(); state.lat=ll.lat; state.lng=ll.lng;
+  document.getElementById("mapModal").classList.add("hidden");
+  var ind=document.getElementById("map-set"); if(ind) ind.textContent="Titik lokasi sudah diatur \u2713";
+  renderPreview();
+}
+
+/* ---------- Init ---------- */
+(function(){
+  try{ var to=new URLSearchParams(location.search).get("to"); if(to) state.guest=to; }catch(e){}
+})();
+initTabs();
+buildEditor();
+renderPreview();
+setInterval(tick, 1000);
+</script>
+
+<!-- ===== Login overlay ===== -->
+<div id="authOverlay">
+  <div class="abox">
+    <div class="alogo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0Z"/></svg></div>
+    <h1>Studio Undangan</h1>
+    <div class="asub">Daftar akun baru atau masuk untuk mulai</div>
+    <label>Email</label>
+    <input id="au-email" type="email" inputmode="email" autocomplete="email" placeholder="nama@email.com" />
+    <label>Password</label>
+    <input id="au-pass" type="password" autocomplete="current-password" placeholder="Minimal 6 karakter" />
+    <div class="abtns">
+      <button class="ghost" id="au-signup">Daftar</button>
+      <button class="primary" id="au-login">Masuk</button>
+    </div>
+    <div id="authMsg"></div>
+    <div style="text-align:center;font-size:11px;color:var(--ink-dim);margin-top:20px;">© SRISP 2026</div>
+  </div>
+</div>
+
+<!-- ===== Daftar undangan ===== -->
+<div id="listModal" class="modal hidden">
+  <div class="sheet">
+    <h2>Undangan Saya <button class="x" id="lm-close">&times;</button></h2>
+    <div id="lm-body"><div class="empty">Memuat…</div></div>
+  </div>
+</div>
+
+<div id="mapModal" class="modal hidden">
+  <div class="sheet" style="max-width:520px">
+    <h2>Atur Titik Lokasi <button class="x" onclick="document.getElementById('mapModal').classList.add('hidden')">&times;</button></h2>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <input id="map-q" placeholder="Cari nama tempat / alamat..." style="flex:1;padding:11px 12px;border-radius:9px;border:1px solid #e0d3ea;outline:none;font-size:14px">
+      <button onclick="mapSearch()" style="padding:0 16px;border-radius:9px;border:none;background:#2f6f6a;color:#fff;font-weight:600;cursor:pointer">Cari</button>
+    </div>
+    <div id="map" style="width:100%;height:300px;border-radius:12px;overflow:hidden;background:#eee"></div>
+    <div id="map-status" style="font-size:12px;color:#8a86a3;margin-top:8px;min-height:14px"></div>
+    <p style="font-size:12px;color:#8a86a3;margin:4px 0 0">Ketuk peta atau geser pin ke lokasi persis, lalu Simpan.</p>
+    <button onclick="saveMapPoint()" style="width:100%;padding:13px;border-radius:10px;border:none;background:#ff5b7f;color:#fff;font-weight:600;font-size:14px;margin-top:10px;cursor:pointer">Simpan Titik</button>
+  </div>
+</div>
+
+<div id="pkgModal" class="modal hidden">
+  <div class="sheet" style="max-width:520px">
+    <h2>Pengaturan Paket <button class="x" id="pk-close">&times;</button></h2>
+    <div id="pk-body"><div class="empty">Memuat…</div></div>
+    <button id="pk-add" style="width:100%;padding:12px;border-radius:10px;border:1px dashed #ff5b7f;background:#fff2f7;color:#ff5b7f;font-weight:600;cursor:pointer;margin-top:8px">+ Tambah Paket</button>
+    <button id="pk-save" style="width:100%;padding:13px;border-radius:10px;border:none;background:#ff5b7f;color:#fff;font-weight:600;font-size:14px;margin-top:8px;cursor:pointer">Simpan Semua Paket</button>
+  </div>
+</div>
+
+<div id="rsvpModal" class="modal hidden">
+  <div class="sheet">
+    <h2>Daftar Tamu (RSVP) <button class="x" id="rm-close">&times;</button></h2>
+    <div id="rm-body"><div class="empty">Memuat…</div></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ===== Mesin Firebase (Auth + Firestore) ===== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, getDoc, getDocs, setDoc, query, where, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyASJd4rJIijxKiVfZfHaNRDYRIYBnxXwuQ",
+    authDomain: "undangan-app-d7bf8.firebaseapp.com",
+    projectId: "undangan-app-d7bf8",
+    storageBucket: "undangan-app-d7bf8.firebasestorage.app",
+    messagingSenderId: "29842739425",
+    appId: "1:29842739425:web:9f5baa06784e4a6aafe7a0"
+  };
+  const fbApp = initializeApp(firebaseConfig);
+  const auth = getAuth(fbApp);
+  const db = getFirestore(fbApp);
+
+  const $ = (id) => document.getElementById(id);
+  const DEFAULT_STATE = JSON.parse(JSON.stringify(window.state));
+  let currentDocId = null;
+
+  function toast(text, warn){
+    const t = $("toast"); t.textContent = text;
+    t.className = "show" + (warn ? " warn" : "");
+    setTimeout(() => { t.className = warn ? "warn" : ""; }, 2600);
+  }
+  function friendly(code){
+    switch(code){
+      case "auth/email-already-in-use": return "Email sudah terdaftar. Coba tombol Masuk.";
+      case "auth/invalid-email": return "Format email tidak valid.";
+      case "auth/weak-password": return "Password minimal 6 karakter.";
+      case "auth/missing-password": return "Password belum diisi.";
+      case "auth/invalid-credential":
+      case "auth/wrong-password":
+      case "auth/user-not-found": return "Email atau password salah.";
+      case "auth/too-many-requests": return "Terlalu banyak percobaan. Coba lagi nanti.";
+      case "auth/network-request-failed": return "Gagal terhubung. Cek koneksi internet.";
+      default: return "Terjadi kesalahan: " + code;
+    }
+  }
+  function authErr(text){ const m=$("authMsg"); m.className="err"; m.textContent=text; }
+  function clearAuthErr(){ const m=$("authMsg"); m.className=""; m.textContent=""; }
+  function authBusy(b){ $("au-signup").disabled=b; $("au-login").disabled=b; }
+
+  $("au-signup").onclick = async () => {
+    clearAuthErr(); authBusy(true);
+    try { await createUserWithEmailAndPassword(auth, $("au-email").value.trim(), $("au-pass").value); }
+    catch(e){ authErr(friendly(e.code || e.message)); }
+    authBusy(false);
+  };
+  $("au-login").onclick = async () => {
+    clearAuthErr(); authBusy(true);
+    try { await signInWithEmailAndPassword(auth, $("au-email").value.trim(), $("au-pass").value); }
+    catch(e){ authErr(friendly(e.code || e.message)); }
+    authBusy(false);
+  };
+
+  // ---- Simpan ----
+  const slugify = (s) => (s||"undangan").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40) || "undangan";
+  async function ensureUniqueSlug(base){
+    let cand = base, n = 2;
+    for(let i=0;i<12;i++){
+      const qs = await getDocs(query(collection(db,"undangan"), where("slug","==",cand)));
+      let taken = false;
+      qs.forEach(d => { if(d.id !== currentDocId) taken = true; });
+      if(!taken) return cand;
+      cand = base + "-" + n; n++;
+    }
+    return base + "-" + Math.random().toString(36).slice(2,6);
+  }
+
+  $("cb-save").onclick = async () => {
+    if(!auth.currentUser) return;
+    const btn = $("cb-save"); btn.disabled = true;
+    try {
+      // slug: pakai isian pengguna, atau ambil dari judul; pastikan unik
+      let base = slugify(window.state.slug || window.state.title);
+      const finalSlug = await ensureUniqueSlug(base);
+      window.state.slug = finalSlug;
+      const slugInput = document.querySelector('[data-k="slug"]'); if(slugInput) slugInput.value = finalSlug;
+      const payload = {
+        ownerUid: auth.currentUser.uid,
+        title: (window.state.title || "Tanpa Judul"),
+        slug: finalSlug,
+        state: JSON.parse(JSON.stringify(window.state)),
+        updatedAt: serverTimestamp()
+      };
+      if(currentDocId){
+        await updateDoc(doc(db, "undangan", currentDocId), payload);
+      } else {
+        const ref = await addDoc(collection(db, "undangan"), payload);
+        currentDocId = ref.id;
+      }
+      toast("Undangan tersimpan \u2713");
+    } catch(e){ toast("Gagal menyimpan: " + (e.code||e.message), true); }
+    btn.disabled = false;
+  };
+
+  // ---- Baru ----
+  $("cb-new").onclick = () => {
+    currentDocId = null;
+    window.state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    window.coverOpen = false;
+    window.buildEditor(); window.renderPreview();
+    toast("Undangan baru dimulai");
+  };
+
+  // ---- Akun / keluar ----
+  $("cb-account").onclick = async () => {
+    if(confirm("Keluar dari akun?")) await signOut(auth);
+  };
+
+  function publicUrl(){
+    const slug = window.state.slug;
+    if(slug) return new URL("u.html?u=" + encodeURIComponent(slug), location.href).href;
+    return new URL("u.html?id=" + currentDocId, location.href).href;
+  }
+
+  async function shortenUrl(url){
+    try{
+      const r = await fetch("https://is.gd/create.php?format=simple&url=" + encodeURIComponent(url));
+      if(r.ok){ const t = (await r.text()).trim(); if(/^https?:\/\//.test(t)) return t; }
+    }catch(e){}
+    return url; // fallback: pakai link asli bila pemendek gagal
+  }
+
+  // ---- Bagikan (link publik) ----
+  $("cb-share").onclick = async () => {
+    if(!currentDocId){ toast("Simpan dulu undangannya, lalu tekan Bagikan", true); return; }
+    const url = await shortenUrl(publicUrl());
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(() => toast("Link undangan disalin \u2713")).catch(() => window.prompt("Salin link undangan:", url));
+    } else {
+      window.prompt("Salin link undangan:", url);
+    }
+  };
+
+  // ---- Kirim via WhatsApp (per tamu) ----
+  $("cb-wa").onclick = async () => {
+    if(!currentDocId){ toast("Simpan dulu undangannya", true); return; }
+    const nama = (window.prompt("Nama tamu (opsional, untuk sapaan):", "") || "").trim();
+    let url = publicUrl();
+    if(nama) url += (url.indexOf("?")>=0?"&":"?") + "to=" + encodeURIComponent(nama);
+    const shortUrl = await shortenUrl(url);
+    const teks = buildWaText(nama, shortUrl);
+    window.open("https://wa.me/?text=" + encodeURIComponent(teks), "_blank");
+  };
+
+  function buildWaText(nama, url){
+    const s = window.state;
+    const style = s.waGreeting || "netral";
+    const sapaan = nama ? ("Bapak/Ibu/Saudara/i " + nama) : "Bapak/Ibu/Saudara/i";
+    const kind = (s.kind || "acara");
+    const L = [];
+    L.push("Kepada Yth.");
+    L.push(sapaan);
+    L.push("");
+    if(style === "islami"){
+      L.push("Assalamu'alaikum Warahmatullahi Wabarakatuh");
+      L.push("");
+      L.push("Bismillahirrahmanirrahim, tanpa mengurangi rasa hormat kami bermaksud mengundang Bapak/Ibu/Saudara/i pada acara " + kind + " kami:");
+    } else {
+      L.push("Tanpa mengurangi rasa hormat, kami bermaksud mengundang Bapak/Ibu/Saudara/i pada acara " + kind + " kami:");
+    }
+    L.push("");
+    if(s.title) L.push("*" + s.title + "*");
+    if(s.hosts) L.push(s.hosts);
+    if(s.date && window.fmtDate){ L.push("🗓️ " + window.fmtDate(s.date)); }
+    if(s.date && window.fmtTime){ L.push("🕙 " + window.fmtTime(s.date)); }
+    var loc = [s.venue, s.address].filter(function(x){return x;}).join(", ");
+    if(loc) L.push("📍 " + loc);
+    L.push("");
+    if(style === "islami"){
+      L.push("Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.");
+    } else {
+      L.push("Merupakan suatu kehormatan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir.");
+    }
+    L.push("");
+    L.push("Buka undangan lengkap:");
+    L.push(url);
+    L.push("");
+    L.push(style === "islami" ? "Wassalamu'alaikum Warahmatullahi Wabarakatuh 🙏" : "Terima kasih 🙏");
+    return L.join("\n");
+  }
+
+  // ---- Daftar Tamu (RSVP) ----
+  $("cb-guests").onclick = openGuests;
+  $("rm-close").onclick = () => $("rsvpModal").classList.add("hidden");
+  $("rsvpModal").onclick = (e) => { if(e.target === $("rsvpModal")) $("rsvpModal").classList.add("hidden"); };
+
+  async function openGuests(){
+    if(!currentDocId){ toast("Buka/simpan undangan dulu untuk lihat tamunya", true); return; }
+    $("rsvpModal").classList.remove("hidden");
+    const body = $("rm-body");
+    body.innerHTML = '<div class="empty">Memuat…</div>';
+    try {
+      const qy = query(collection(db, "rsvp"), where("ownerUid", "==", auth.currentUser.uid));
+      const snap = await getDocs(qy);
+      const items = [];
+      snap.forEach(d => { const x = d.data(); if(x.invitationId === currentDocId) items.push(x); });
+      items.sort((a,b) => ((b.waktu&&b.waktu.toMillis?b.waktu.toMillis():0) - (a.waktu&&a.waktu.toMillis?a.waktu.toMillis():0)));
+      if(!items.length){ body.innerHTML = '<div class="empty">Belum ada RSVP masuk.<br>Bagikan link undangannya dulu.</div>'; return; }
+      let hadir = 0, tidak = 0, orang = 0;
+      items.forEach(x => { if(x.kehadiran === "hadir"){ hadir++; orang += (x.jumlah||1); } else tidak++; });
+      let html = '<div class="rsvp-sum">'
+        + '<div><b>'+items.length+'</b><span>Respon</span></div>'
+        + '<div><b>'+hadir+'</b><span>Hadir</span></div>'
+        + '<div><b>'+orang+'</b><span>Total Tamu</span></div>'
+        + '<div><b>'+tidak+'</b><span>Tidak</span></div></div>';
+      items.forEach(x => {
+        const when = (x.waktu && x.waktu.toDate) ? x.waktu.toDate().toLocaleString("id-ID",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
+        const badge = x.kehadiran === "hadir"
+          ? '<span class="g-yes">Hadir'+((x.jumlah>1)?" \u00b7 "+x.jumlah:"")+'</span>'
+          : '<span class="g-no">Tidak</span>';
+        html += '<div class="g-item"><div><div class="g-name"></div><div class="g-when">'+when+'</div></div>'+badge+'</div>';
+      });
+      body.innerHTML = html;
+      const names = body.querySelectorAll(".g-name");
+      items.forEach((x,i) => { if(names[i]) names[i].textContent = x.nama || "(tanpa nama)"; });
+    } catch(e){ body.innerHTML = '<div class="empty">Gagal memuat: '+(e.code||e.message)+'</div>'; }
+  }
+
+  // ---- Daftar undangan ----
+  $("cb-list").onclick = openList;
+  $("lm-close").onclick = () => $("listModal").classList.add("hidden");
+  $("listModal").onclick = (e) => { if(e.target === $("listModal")) $("listModal").classList.add("hidden"); };
+
+  async function openList(){
+    $("listModal").classList.remove("hidden");
+    const body = $("lm-body");
+    body.innerHTML = '<div class="empty">Memuat…</div>';
+    try {
+      const q = query(collection(db, "undangan"), where("ownerUid", "==", auth.currentUser.uid));
+      const snap = await getDocs(q);
+      const items = [];
+      snap.forEach(d => items.push(Object.assign({ id: d.id }, d.data())));
+      items.sort((a,b) => ((b.updatedAt&&b.updatedAt.toMillis?b.updatedAt.toMillis():0) - (a.updatedAt&&a.updatedAt.toMillis?a.updatedAt.toMillis():0)));
+      if(!items.length){ body.innerHTML = '<div class="empty">Belum ada undangan tersimpan.<br>Buat lalu tekan Simpan.</div>'; return; }
+      body.innerHTML = "";
+      items.forEach(it => {
+        const row = document.createElement("div");
+        row.className = "inv-item";
+        const when = it.updatedAt && it.updatedAt.toDate ? it.updatedAt.toDate().toLocaleString("id-ID",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
+        const left = document.createElement("div");
+        left.innerHTML = '<div class="t"></div><div class="d">'+when+'</div>';
+        left.querySelector(".t").textContent = it.title || "Tanpa Judul";
+        const acts = document.createElement("div");
+        acts.className = "acts";
+        const openBtn = document.createElement("button"); openBtn.className="open"; openBtn.textContent="Buka";
+        const delBtn = document.createElement("button"); delBtn.className="del"; delBtn.textContent="Hapus";
+        openBtn.onclick = () => loadInvitation(it.id, it.state);
+        delBtn.onclick = async () => {
+          if(!confirm("Hapus undangan ini?")) return;
+          try { await deleteDoc(doc(db,"undangan",it.id)); if(currentDocId===it.id) currentDocId=null; openList(); toast("Undangan dihapus"); }
+          catch(e){ toast("Gagal menghapus", true); }
+        };
+        acts.appendChild(openBtn); acts.appendChild(delBtn);
+        row.appendChild(left); row.appendChild(acts);
+        body.appendChild(row);
+      });
+    } catch(e){ body.innerHTML = '<div class="empty">Gagal memuat: '+(e.code||e.message)+'</div>'; }
+  }
+
+  function loadInvitation(id, st){
+    if(st){
+      window.state = JSON.parse(JSON.stringify(st));
+      window.coverOpen = false;
+      currentDocId = id;
+      window.buildEditor(); window.renderPreview();
+      $("listModal").classList.add("hidden");
+      toast("Undangan dibuka");
+    }
+  }
+
+  // ---- Panel Admin: Paket ----
+  const ADMIN_EMAIL = "test@undangan.com";
+  let pkgs = [];
+
+  $("cb-admin").onclick = openPkg;
+  $("pk-close").onclick = () => $("pkgModal").classList.add("hidden");
+  $("pkgModal").onclick = (e) => { if(e.target === $("pkgModal")) $("pkgModal").classList.add("hidden"); };
+
+  async function openPkg(){
+    $("pkgModal").classList.remove("hidden");
+    const body = $("pk-body");
+    body.innerHTML = '<div class="empty">Memuat…</div>';
+    try{
+      const snap = await getDoc(doc(db, "settings", "paket"));
+      pkgs = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [
+        { nama:"Gratis",  harga:"Rp0",      fitur:"1 undangan, 3 tema dasar" },
+        { nama:"Premium", harga:"Rp50.000", fitur:"Semua tema, musik, galeri, RSVP" }
+      ];
+      renderPkg();
+    }catch(e){ body.innerHTML = '<div class="empty">Gagal memuat: '+(e.code||e.message)+'</div>'; }
+  }
+
+  function renderPkg(){
+    const body = $("pk-body");
+    if(!pkgs.length){ body.innerHTML = '<div class="empty">Belum ada paket. Tekan "Tambah Paket".</div>'; return; }
+    body.innerHTML = "";
+    pkgs.forEach((p, i) => {
+      const box = document.createElement("div");
+      box.style.cssText = "background:#fff2f7;border:1px solid #ffd9e6;border-radius:12px;padding:12px;margin-bottom:8px";
+      const inp = (val, ph, key) => {
+        const el = document.createElement("input");
+        el.value = val || ""; el.placeholder = ph;
+        el.style.cssText = "width:100%;padding:10px 12px;border-radius:9px;border:1px solid #f1e4ec;background:#fff;color:#2b2540;outline:none;font-size:14px;margin-bottom:6px;font-family:inherit";
+        el.oninput = () => { pkgs[i][key] = el.value; };
+        return el;
+      };
+      box.appendChild(inp(p.nama, "Nama paket (mis. Premium)", "nama"));
+      box.appendChild(inp(p.harga, "Harga (mis. Rp50.000)", "harga"));
+      box.appendChild(inp(p.fitur, "Fitur, pisahkan dengan koma", "fitur"));
+      const del = document.createElement("button");
+      del.textContent = "Hapus paket";
+      del.style.cssText = "padding:7px 12px;border-radius:8px;border:none;background:#fdeaec;color:#b23a48;font-weight:600;font-size:12px;cursor:pointer";
+      del.onclick = () => { pkgs.splice(i,1); renderPkg(); };
+      box.appendChild(del);
+      body.appendChild(box);
+    });
+  }
+
+  $("pk-add").onclick = () => { pkgs.push({ nama:"", harga:"", fitur:"" }); renderPkg(); };
+
+  $("pk-save").onclick = async () => {
+    const btn = $("pk-save"); btn.disabled = true;
+    try{
+      await setDoc(doc(db, "settings", "paket"), { list: pkgs, updatedAt: serverTimestamp() });
+      toast("Paket tersimpan \u2713");
+      $("pkgModal").classList.add("hidden");
+    }catch(e){ toast("Gagal menyimpan paket: " + (e.code||e.message), true); }
+    btn.disabled = false;
+  };
+
+  // ---- Gerbang login ----
+  let bootHidden = false;
+  onAuthStateChanged(auth, (user) => {
+    if(!bootHidden){ const b=$("boot"); if(b){ b.classList.add("done"); setTimeout(()=>{ if(b) b.style.display="none"; },600); } bootHidden = true; }
+    if(user){
+      $("authOverlay").classList.add("hidden");
+      $("cloudbar").style.display = "flex";
+      $("cb-email").textContent = user.email;
+      $("cb-admin").style.display = (user.email === ADMIN_EMAIL) ? "flex" : "none";
+      resetIdle();
+    } else {
+      currentDocId = null;
+      $("authOverlay").classList.remove("hidden");
+      $("cloudbar").style.display = "none";
+      $("au-pass").value = "";
+      stopIdle();
+    }
+  });
+
+  // ---- Auto-logout: 5 menit tanpa aktivitas ----
+  const IDLE_MS = 5 * 60 * 1000;
+  let idleTimer = null;
+  function resetIdle(){
+    if(idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(async () => {
+      if(auth.currentUser){ try{ await signOut(auth); }catch(e){} toast("Otomatis keluar: 5 menit tidak ada aktivitas"); }
+    }, IDLE_MS);
+  }
+  function stopIdle(){ if(idleTimer){ clearTimeout(idleTimer); idleTimer = null; } }
+  ["click","keydown","touchstart","mousemove","scroll"].forEach(ev =>
+    window.addEventListener(ev, () => { if(auth.currentUser) resetIdle(); }, { passive:true })
+  );
+</script>
+</body>
+</html>

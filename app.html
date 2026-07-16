@@ -965,7 +965,30 @@ setInterval(tick, 1000);
     <h2>Pengaturan Paket <button class="x" id="pk-close">&times;</button></h2>
     <div id="pk-body"><div class="empty">Memuat…</div></div>
     <button id="pk-add" style="width:100%;padding:12px;border-radius:10px;border:1px dashed #ff5b7f;background:#fff2f7;color:#ff5b7f;font-weight:600;cursor:pointer;margin-top:8px">+ Tambah Paket</button>
-    <button id="pk-save" style="width:100%;padding:13px;border-radius:10px;border:none;background:#ff5b7f;color:#fff;font-weight:600;font-size:14px;margin-top:8px;cursor:pointer">Simpan Semua Paket</button>
+
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid #f1e4ec">
+      <div style="font-weight:700;font-size:14px;color:#2b2540;margin-bottom:4px">Info Pembayaran</div>
+      <div style="font-size:12px;color:#8a86a3;margin-bottom:10px">Ditampilkan ke calon pembeli saat memilih paket berbayar.</div>
+      <input id="pay-bank" placeholder="Bank / e-wallet (mis. BCA)" style="width:100%;padding:11px 12px;border-radius:9px;border:1px solid #e0d3ea;outline:none;font-size:14px;margin-bottom:7px">
+      <input id="pay-number" placeholder="Nomor rekening / e-wallet" style="width:100%;padding:11px 12px;border-radius:9px;border:1px solid #e0d3ea;outline:none;font-size:14px;margin-bottom:7px">
+      <input id="pay-holder" placeholder="Atas nama" style="width:100%;padding:11px 12px;border-radius:9px;border:1px solid #e0d3ea;outline:none;font-size:14px;margin-bottom:7px">
+      <input id="pay-wa" placeholder="Nomor WhatsApp konfirmasi (mis. 62812xxxx)" style="width:100%;padding:11px 12px;border-radius:9px;border:1px solid #e0d3ea;outline:none;font-size:14px">
+    </div>
+
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid #f1e4ec">
+      <div style="font-weight:700;font-size:14px;color:#2b2540;margin-bottom:4px">Akun Admin</div>
+      <div style="font-size:12px;color:#8a86a3;margin-bottom:10px">Ubah email atau password login admin.</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input id="adm-email" type="email" placeholder="Email admin baru" style="flex:1;padding:11px 12px;border-radius:9px;border:1px solid #e0d3ea;outline:none;font-size:14px">
+        <button id="adm-email-btn" style="padding:0 14px;border-radius:9px;border:none;background:#7c6bf5;color:#fff;font-weight:600;cursor:pointer;white-space:nowrap">Ubah</button>
+      </div>
+      <div style="display:flex;gap:6px">
+        <input id="adm-pass" type="password" placeholder="Password baru (min. 6 karakter)" style="flex:1;padding:11px 12px;border-radius:9px;border:1px solid #e0d3ea;outline:none;font-size:14px">
+        <button id="adm-pass-btn" style="padding:0 14px;border-radius:9px;border:none;background:#12b3a6;color:#fff;font-weight:600;cursor:pointer;white-space:nowrap">Ubah</button>
+      </div>
+    </div>
+
+    <button id="pk-save" style="width:100%;padding:13px;border-radius:10px;border:none;background:#ff5b7f;color:#fff;font-weight:600;font-size:14px;margin-top:14px;cursor:pointer">Simpan Semua Pengaturan</button>
   </div>
 </div>
 
@@ -981,7 +1004,7 @@ setInterval(tick, 1000);
 <!-- ===== Mesin Firebase (Auth + Firestore) ===== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, verifyBeforeUpdateEmail }
     from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
   import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, getDoc, getDocs, setDoc, query, where, serverTimestamp }
     from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
@@ -1256,7 +1279,7 @@ setInterval(tick, 1000);
   }
 
   // ---- Panel Admin: Paket ----
-  const ADMIN_EMAIL = "test@undangan.com";
+  const ADMIN_UID = "AYYpQCTjbsM7pWMWeDsIGoVbEm12";
   let pkgs = [];
 
   $("cb-admin").onclick = openPkg;
@@ -1269,10 +1292,16 @@ setInterval(tick, 1000);
     body.innerHTML = '<div class="empty">Memuat…</div>';
     try{
       const snap = await getDoc(doc(db, "settings", "paket"));
-      pkgs = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [
+      const data = snap.exists() ? snap.data() : {};
+      pkgs = Array.isArray(data.list) ? data.list : [
         { nama:"Gratis",  harga:"Rp0",      fitur:"1 undangan, 3 tema dasar" },
         { nama:"Premium", harga:"Rp50.000", fitur:"Semua tema, musik, galeri, RSVP" }
       ];
+      const pay = data.pay || {};
+      $("pay-bank").value = pay.bank || "";
+      $("pay-number").value = pay.number || "";
+      $("pay-holder").value = pay.holder || "";
+      $("pay-wa").value = pay.wa || "";
       renderPkg();
     }catch(e){ body.innerHTML = '<div class="empty">Gagal memuat: '+(e.code||e.message)+'</div>'; }
   }
@@ -1305,13 +1334,51 @@ setInterval(tick, 1000);
 
   $("pk-add").onclick = () => { pkgs.push({ nama:"", harga:"", fitur:"" }); renderPkg(); };
 
+  // ---- Ubah password admin ----
+  $("adm-pass-btn").onclick = async () => {
+    const np = $("adm-pass").value;
+    if(np.length < 6){ toast("Password minimal 6 karakter", true); return; }
+    const btn = $("adm-pass-btn"); btn.disabled = true;
+    try{
+      await updatePassword(auth.currentUser, np);
+      $("adm-pass").value = "";
+      toast("Password berhasil diubah \u2713");
+    }catch(e){
+      if(e.code === "auth/requires-recent-login") toast("Demi keamanan, keluar lalu masuk lagi, baru ubah password", true);
+      else toast("Gagal: " + (e.code||e.message), true);
+    }
+    btn.disabled = false;
+  };
+
+  // ---- Ubah email admin (verifikasi ke email baru) ----
+  $("adm-email-btn").onclick = async () => {
+    const ne = $("adm-email").value.trim();
+    if(!/^\S+@\S+\.\S+$/.test(ne)){ toast("Email tidak valid", true); return; }
+    const btn = $("adm-email-btn"); btn.disabled = true;
+    try{
+      await verifyBeforeUpdateEmail(auth.currentUser, ne);
+      toast("Link verifikasi dikirim ke " + ne + ". Buka email itu untuk menyelesaikan.");
+      $("adm-email").value = "";
+    }catch(e){
+      if(e.code === "auth/requires-recent-login") toast("Demi keamanan, keluar lalu masuk lagi, baru ubah email", true);
+      else toast("Gagal: " + (e.code||e.message), true);
+    }
+    btn.disabled = false;
+  };
+
   $("pk-save").onclick = async () => {
     const btn = $("pk-save"); btn.disabled = true;
     try{
-      await setDoc(doc(db, "settings", "paket"), { list: pkgs, updatedAt: serverTimestamp() });
-      toast("Paket tersimpan \u2713");
+      const pay = {
+        bank: $("pay-bank").value.trim(),
+        number: $("pay-number").value.trim(),
+        holder: $("pay-holder").value.trim(),
+        wa: $("pay-wa").value.trim().replace(/[^0-9]/g,"")
+      };
+      await setDoc(doc(db, "settings", "paket"), { list: pkgs, pay: pay, updatedAt: serverTimestamp() });
+      toast("Pengaturan tersimpan \u2713");
       $("pkgModal").classList.add("hidden");
-    }catch(e){ toast("Gagal menyimpan paket: " + (e.code||e.message), true); }
+    }catch(e){ toast("Gagal menyimpan: " + (e.code||e.message), true); }
     btn.disabled = false;
   };
 
@@ -1323,7 +1390,7 @@ setInterval(tick, 1000);
       $("authOverlay").classList.add("hidden");
       $("cloudbar").style.display = "flex";
       $("cb-email").textContent = user.email;
-      $("cb-admin").style.display = (user.email === ADMIN_EMAIL) ? "flex" : "none";
+      $("cb-admin").style.display = (user.uid === ADMIN_UID) ? "flex" : "none";
       resetIdle();
     } else {
       currentDocId = null;

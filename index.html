@@ -88,6 +88,13 @@
 
   footer{padding:36px 22px;text-align:center;border-top:1px solid #f1e4ec;color:#8a86a3;font-size:12.5px}
   .float{animation:floaty 5s ease-in-out infinite}
+  .tcard{cursor:pointer}
+  .tp-modal{position:fixed;inset:0;z-index:60;background:rgba(20,15,30,.62);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:18px;animation:fadeUp .3s ease}
+  .tp-modal.show{display:flex}
+  .tp-inner{position:relative;width:100%;max-width:380px}
+  .tp-card{width:100%;max-height:86vh;overflow:auto;border-radius:22px;box-shadow:0 30px 70px -20px rgba(0,0,0,.6)}
+  .tp-close{position:absolute;top:-14px;right:-6px;z-index:2;width:38px;height:38px;border-radius:50%;border:none;background:#fff;color:#2b2540;font-size:20px;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  .tp-hint{text-align:center;font-size:12px;color:#b39fd4;margin-top:14px}
   @media(max-width:620px){h1{font-size:32px}h2{font-size:25px}section{padding:52px 20px}}
 </style>
 </head>
@@ -118,8 +125,9 @@
   <div class="wrap">
     <div class="eyebrow reveal">Galeri Tema</div>
     <h2 class="reveal">Pilih Desain Favoritmu</h2>
-    <p class="sub reveal">Sepuluh tema siap pakai — dari elegan sampai ceria. Semua tampil cantik di layar HP.</p>
+    <p class="sub reveal">Sepuluh tema siap pakai — dari elegan sampai ceria. Ketuk tema untuk melihat pratinjau.</p>
     <div class="themes" id="themes"></div>
+    <div class="tp-hint">Ketuk salah satu tema di atas untuk pratinjau contoh undangan.</div>
   </div>
 </section>
 
@@ -140,6 +148,20 @@
     <div class="pkgs" id="pkgs"><div class="pload"><div class="lspin"></div>Memuat paket…</div></div>
   </div>
 </section>
+
+<div class="tp-modal" id="buyModal">
+  <div class="tp-inner">
+    <button class="tp-close" onclick="closeBuy()">&times;</button>
+    <div class="tp-card" id="buyBody" style="background:#fff;padding:26px 22px"></div>
+  </div>
+</div>
+
+<div class="tp-modal" id="tpModal">
+  <div class="tp-inner">
+    <button class="tp-close" onclick="closeTheme()">&times;</button>
+    <div class="tp-card" id="tpCard"></div>
+  </div>
+</div>
 
 <footer>
   <div style="margin-bottom:6px;font-weight:600;color:#5c5674">SRISP</div>
@@ -162,7 +184,7 @@ var THEMES=[
 ];
 var tw=document.getElementById("themes"),th="";
 THEMES.forEach(function(t,i){
-  th+='<div class="tcard reveal" style="transition-delay:'+Math.min(i*50,300)+'ms">'
+  th+='<div class="tcard reveal" onclick="openTheme('+i+')" style="transition-delay:'+Math.min(i*50,300)+'ms">'
     +'<div class="tprev" style="background:'+t.bg+';color:'+t.c+'">'
     +'<div><div class="td" style="color:'+t.a+'">Undangan</div>'
     +'<div class="tt" style="font-family:'+t.f+'">Andi &amp; Sinta</div>'
@@ -171,6 +193,31 @@ THEMES.forEach(function(t,i){
     +'<div class="tmeta"><b>'+t.n+'</b><span>'+t.t+'</span></div></div>';
 });
 tw.innerHTML=th;
+
+/* ---------- Pratinjau tema (contoh, read-only) ---------- */
+function tdivider(a){
+  return '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:16px 0"><span style="height:1px;width:42px;background:'+a+';opacity:.55"></span><span style="width:6px;height:6px;border-radius:50%;background:'+a+'"></span><span style="height:1px;width:42px;background:'+a+';opacity:.55"></span></div>';
+}
+function sampleInvitation(t){
+  return '<div style="background:'+t.bg+';color:'+t.c+';font-family:'+t.f+';padding:46px 26px 40px;text-align:center">'
+    +'<div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:'+t.a+';margin-bottom:12px">Undangan Pernikahan</div>'
+    +'<div style="font-size:40px;line-height:1.1">Andi &amp; Sinta</div>'
+    +'<div style="font-size:13.5px;opacity:.72;margin-top:8px">Putra &amp; Putri dari keluarga besar</div>'
+    +tdivider(t.a)
+    +'<div style="font-size:18px;color:'+t.a+'">Minggu, 23 Agustus 2026</div>'
+    +'<div style="font-size:13px;opacity:.7;margin-top:2px">Pukul 10.00 WIB</div>'
+    +'<div style="margin:24px auto;max-width:300px;font-size:14px;line-height:1.75;opacity:.85">Dengan penuh syukur, kami mengundang Bapak/Ibu/Saudara/i untuk hadir dan memberikan doa restu.</div>'
+    +'<div style="display:inline-block;padding:12px 26px;border-radius:14px;background:'+t.a+';color:#fff;font-size:13px;font-weight:600">💌 Buka Undangan</div>'
+    +'<div style="margin-top:14px;font-size:11px;letter-spacing:1px;opacity:.6">Contoh tampilan · Tema '+t.n+'</div>'
+    +'</div>';
+}
+function openTheme(i){
+  var t=THEMES[i];
+  document.getElementById("tpCard").innerHTML=sampleInvitation(t);
+  document.getElementById("tpModal").classList.add("show");
+}
+function closeTheme(){ document.getElementById("tpModal").classList.remove("show"); }
+document.getElementById("tpModal").addEventListener("click",function(e){ if(e.target===this) closeTheme(); });
 
 /* ---------- Fitur ---------- */
 var FE=[
@@ -211,6 +258,7 @@ document.querySelectorAll(".reveal").forEach(function(e){ obs.observe(e); });
   };
   const db = getFirestore(initializeApp(firebaseConfig));
   const box = document.getElementById("pkgs");
+  let PAY = {};
   const esc = (s)=>String(s==null?"":s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const tick = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#12b3a6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
 
@@ -224,16 +272,51 @@ document.querySelectorAll(".reveal").forEach(function(e){ obs.observe(e); });
       card.style.transitionDelay = Math.min(i*80,300)+"ms";
       card.innerHTML = '<div class="pn">'+esc(p.nama||"Paket")+'</div>'
         + '<div class="ph">'+esc(p.harga||"-")+'</div>'
-        + '<ul>' + items.map(x => '<li>'+tick+'<span>'+esc(x)+'</span></li>').join("") + '</ul>'
-        + '<a class="btn btn-p" href="app.html" style="width:100%">Pilih Paket</a>';
+        + '<ul>' + items.map(x => '<li>'+tick+'<span>'+esc(x)+'</span></li>').join("") + '</ul>';
+      const btn = document.createElement("a");
+      btn.className = "btn btn-p"; btn.style.width = "100%"; btn.href = "javascript:void(0)";
+      btn.textContent = "Pilih Paket";
+      btn.onclick = () => openBuy(p);
+      card.appendChild(btn);
       box.appendChild(card);
       if(window.obs) window.obs.observe(card); else card.classList.add("in");
     });
   }
 
+  function openBuy(p){
+    const isFree = /^rp\s*0|gratis|free/i.test(String(p.harga||"")+" "+String(p.nama||""));
+    const m = document.getElementById("buyModal");
+    const body = document.getElementById("buyBody");
+    if(isFree){
+      body.innerHTML = '<div style="text-align:center"><div style="font-family:\'Playfair Display\',serif;font-size:22px;margin-bottom:6px">'+esc(p.nama)+'</div>'
+        + '<p style="color:#6f6a86;font-size:14px;line-height:1.6;margin:0 0 18px">Paket ini gratis. Langsung daftar dan mulai buat undanganmu.</p>'
+        + '<a class="btn btn-p" href="app.html" style="width:100%">Mulai Sekarang →</a></div>';
+    } else if(PAY.number){
+      const waMsg = encodeURIComponent("Halo, saya ingin membeli paket " + (p.nama||"") + " (" + (p.harga||"") + "). Mohon info selanjutnya.");
+      const waLink = PAY.wa ? ("https://wa.me/" + PAY.wa + "?text=" + waMsg) : null;
+      body.innerHTML = '<div style="font-family:\'Playfair Display\',serif;font-size:22px;text-align:center;margin-bottom:4px">'+esc(p.nama)+'</div>'
+        + '<div style="text-align:center;color:#ff5b7f;font-weight:700;font-size:20px;margin-bottom:16px">'+esc(p.harga||"")+'</div>'
+        + '<div style="background:#faf7ff;border:1px solid #eadff7;border-radius:14px;padding:16px;margin-bottom:14px">'
+        + '<div style="font-size:12px;color:#8a86a3;margin-bottom:8px">Transfer ke:</div>'
+        + '<div style="font-weight:700;font-size:16px">'+esc(PAY.bank||"")+'</div>'
+        + '<div style="font-size:20px;letter-spacing:1px;color:#7c6bf5;margin:6px 0">'+esc(PAY.number)+'</div>'
+        + '<div style="font-size:13px;color:#6f6a86">a.n. '+esc(PAY.holder||"")+'</div>'
+        + '<button onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+esc(PAY.number)+'\');this.textContent=\'Nomor disalin \u2713\'" style="margin-top:10px;padding:8px 14px;border-radius:9px;border:1px solid #7c6bf5;background:#fff;color:#7c6bf5;font-weight:600;font-size:12px;cursor:pointer">Salin Nomor</button></div>'
+        + '<p style="font-size:12.5px;color:#6f6a86;line-height:1.6;margin:0 0 14px">Setelah transfer, konfirmasikan pembayaranmu via WhatsApp agar paket diaktifkan.</p>'
+        + (waLink ? '<a class="btn btn-p" href="'+waLink+'" target="_blank" rel="noreferrer" style="width:100%">Konfirmasi via WhatsApp</a>' : '<div style="text-align:center;color:#b23a48;font-size:13px">Nomor WhatsApp konfirmasi belum diatur admin.</div>');
+    } else {
+      body.innerHTML = '<div style="text-align:center;color:#6f6a86;font-size:14px;padding:10px">Info pembayaran belum diatur admin. Silakan hubungi penyelenggara.</div>';
+    }
+    m.classList.add("show");
+  }
+  window.closeBuy = () => document.getElementById("buyModal").classList.remove("show");
+  document.getElementById("buyModal").addEventListener("click", function(e){ if(e.target===this) window.closeBuy(); });
+
   try{
     const snap = await getDoc(doc(db, "settings", "paket"));
-    render(snap.exists() ? snap.data().list : null);
+    const data = snap.exists() ? snap.data() : {};
+    PAY = data.pay || {};
+    render(data.list || null);
   }catch(e){
     box.innerHTML = '<div class="pload">Gagal memuat paket.</div>';
   }

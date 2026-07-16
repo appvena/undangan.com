@@ -920,7 +920,7 @@ setInterval(tick, 1000);
 </script>
 
 <!-- ===== Login overlay ===== -->
-<div id="authOverlay">
+<div id="authOverlay" class="hidden">
   <div class="abox">
     <div class="alogo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0Z"/></svg></div>
     <h1>Studio Undangan</h1>
@@ -1383,9 +1383,14 @@ setInterval(tick, 1000);
   };
 
   // ---- Gerbang login ----
+  const bootStart = Date.now();
   let bootHidden = false;
+  function hideBoot(){
+    if(bootHidden) return; bootHidden = true;
+    const b = $("boot"); if(!b) return;
+    b.classList.add("done"); setTimeout(() => { if(b) b.style.display = "none"; }, 550);
+  }
   onAuthStateChanged(auth, (user) => {
-    if(!bootHidden){ const b=$("boot"); if(b){ b.classList.add("done"); setTimeout(()=>{ if(b) b.style.display="none"; },600); } bootHidden = true; }
     if(user){
       $("authOverlay").classList.add("hidden");
       $("cloudbar").style.display = "flex";
@@ -1399,7 +1404,21 @@ setInterval(tick, 1000);
       $("au-pass").value = "";
       stopIdle();
     }
+    // sembunyikan loading setelah minimal 700ms (biar animasi terlihat & status auth stabil)
+    setTimeout(hideBoot, Math.max(0, 700 - (Date.now() - bootStart)));
   });
+
+  // ---- Tombol back: konfirmasi dulu, jangan langsung keluar ----
+  function onPop(){
+    if(confirm("Keluar dari aplikasi?")){
+      window.removeEventListener("popstate", onPop);
+      history.back();
+    } else {
+      history.pushState({ app:true }, "");
+    }
+  }
+  history.pushState({ app:true }, "");
+  window.addEventListener("popstate", onPop);
 
   // ---- Auto-logout: 5 menit tanpa aktivitas ----
   const IDLE_MS = 5 * 60 * 1000;
